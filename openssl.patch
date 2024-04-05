@@ -1,0 +1,75 @@
+diff --git a/Configurations/wasm32-wasi.conf b/Configurations/wasm32-wasi.conf
+new file mode 100644
+index 0000000000..1b69ccc643
+--- /dev/null
++++ b/Configurations/wasm32-wasi.conf
+@@ -0,0 +1,16 @@
++my %targets = (
++    "wasm32-wasi" => {
++        inherit_from     => [ "cc" ],
++        cflags           => add("-arch wasm32 -target wasm32-wasi -Wno-shift-op-parentheses -v -Werror"),
++        includes         => [ "/usr/include/wasm32-wasi" ],
++        defines          => [
++            "HAVE_FORK=0",
++            "_WASI_EMULATED_SIGNAL",
++            "_WASI_EMULATED_MMAN",
++        ],
++        asm_arch         => 'wasm32',
++        ranlib           => "llvm-ranlib-15",
++        lflags           => add("-arch wasm32 -target wasm32-wasi"),
++        ex_libs          => add("-lwasi-emulated-signal", "-lwasi-emulated-mman"),
++    },
++);
+diff --git a/apps/speed.c b/apps/speed.c
+index b978323f56..13ab33420e 100644
+--- a/apps/speed.c
++++ b/apps/speed.c
+@@ -27,6 +27,11 @@
+ /* We need to use some deprecated APIs */
+ #define OPENSSL_SUPPRESS_DEPRECATED
+
++unsigned alarm(unsigned seconds)
++{
++    return 0;
++}
++
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+diff --git a/crypto/asn1/a_time.c b/crypto/asn1/a_time.c
+index b4a0f9918a..043e224ed0 100644
+--- a/crypto/asn1/a_time.c
++++ b/crypto/asn1/a_time.c
+@@ -600,6 +600,7 @@ int ASN1_TIME_compare(const ASN1_TIME *a, const ASN1_TIME *b)
+ #ifdef WIN32
+ # define timezone _timezone
+ #endif
++time_t timegm(struct tm *);
+
+ #if defined(__FreeBSD__) || defined(__wasi__)
+ # define USE_TIMEGM
+diff --git a/crypto/threads_none.c b/crypto/threads_none.c
+index eb7b036fce..b43c60b8d1 100644
+--- a/crypto/threads_none.c
++++ b/crypto/threads_none.c
+@@ -241,7 +241,7 @@ int openssl_init_fork_handlers(void)
+ int openssl_get_fork_id(void)
+ {
+ # if defined(OPENSSL_SYS_UNIX)
+-    return getpid();
++    return 0; // getpid();
+ # else
+     return 0;
+ # endif
+diff --git a/providers/implementations/rands/seeding/rand_unix.c b/providers/implementations/rands/seeding/rand_unix.c
+index 9a936d800d..817b05e3dc 100644
+--- a/providers/implementations/rands/seeding/rand_unix.c
++++ b/providers/implementations/rands/seeding/rand_unix.c
+@@ -768,7 +768,7 @@ int ossl_pool_add_nonce_data(RAND_POOL *pool)
+      * ensure that the nonce is unique with high probability for
+      * different process instances.
+      */
+-    data.pid = getpid();
++    data.pid = 0;
+     data.tid = CRYPTO_THREAD_get_current_id();
+     data.time = get_time_stamp();

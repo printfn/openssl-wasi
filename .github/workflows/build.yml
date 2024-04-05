@@ -1,0 +1,47 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  build:
+    permissions:
+      contents: read
+      actions: read
+      pages: write
+      id-token: write
+
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - run: |
+          sudo apt-get update -y
+          sudo apt-get install -y clang-15 lld-15 wasi-libc
+          patch -d openssl -p1 <openssl.patch
+          (cd openssl && CC=clang-15 AR=llvm-ar-15 ./Configure wasm32-wasi no-dgram no-quic no-tests no-ui-console no-sock no-posix-io)
+          (cd openssl && make -j$(nproc))
+          cp openssl/apps/openssl web/src/assets/openssl.wasm
+          (cd web && npm ci && npm run build)
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
