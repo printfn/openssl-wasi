@@ -23,10 +23,10 @@ function App() {
 
 	useEffect(() => {
 		(async () => {
-			const result = await execute(getCommand(fileType, true), file);
+			const result = await execute(getCommand(fileType, pem), file);
 			setDecoded(result);
 		})();
-	}, [file, fileType]);
+	}, [file, pem, fileType]);
 
 	const decodeFile = useCallback(
 		(files: FileList | null) => {
