@@ -1,5 +1,5 @@
-import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
-import { execute } from './openssl';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { type OpenSSLResult, execute } from './openssl';
 import { Button, Container, Form } from 'react-bootstrap';
 import { Buffer } from 'node:buffer';
 import './main.css';
@@ -46,7 +46,7 @@ function getCommand(fileType: FileType, pem: boolean) {
 function App() {
 	const [file, setFile] = useState(new Uint8Array());
 	const [command, setCommand] = useState(getCommand('cert', true));
-	const [decoded, setDecoded] = useState<ReactElement>(<></>);
+	const [result, setResult] = useState<OpenSSLResult>({ output: <></> });
 	const [autoExecute, setAutoExecute] = useState(true);
 	const pem = useMemo(() => {
 		if (command.includes('-inform PEM')) {
@@ -70,7 +70,7 @@ function App() {
 	const executeCommand = useCallback(() => {
 		(async () => {
 			const result = await execute(command, file);
-			setDecoded(result);
+			setResult(result);
 		})();
 	}, [file, command]);
 
@@ -186,7 +186,24 @@ function App() {
 					Execute
 				</Button>
 			</div>
-			<pre>{decoded}</pre>
+			{result.files && result.files.length > 0 && (
+				<div className="mb-3">
+					<h4>Output Files:</h4>
+					{result.files?.map(file => (
+						<a
+							key={file.name}
+							className="me-1"
+							href={`data:application/octet-stream;base64,${Buffer.from(file.contents).toString('base64')}`}
+							download={file.name}
+						>
+							<Button variant="secondary">
+								{file.name} ({file.contents.length} bytes)
+							</Button>
+						</a>
+					))}
+				</div>
+			)}
+			<pre>{result.output}</pre>
 		</Container>
 	);
 }

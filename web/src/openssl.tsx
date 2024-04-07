@@ -1,10 +1,21 @@
 import { init, MemFS, WASI } from '@wasmer/wasi';
 import opensslURL from './assets/openssl.wasm?url';
 import { parse } from 'shell-quote';
+import { ReactElement } from 'react';
 
 await init();
 
-export async function execute(cmd: string, file: Uint8Array) {
+type File = { name: string; contents: Uint8Array };
+
+export type OpenSSLResult = {
+	output: ReactElement;
+	files?: File[];
+};
+
+export async function execute(
+	cmd: string,
+	file: Uint8Array,
+): Promise<OpenSSLResult> {
 	const parsed = parse(cmd);
 	const args = [];
 	for (let i = 0; i < parsed.length; ++i) {
@@ -12,7 +23,11 @@ export async function execute(cmd: string, file: Uint8Array) {
 		if (typeof arg === 'string') {
 			args.push(arg);
 		} else {
-			return <>failed to parse command `{cmd}`</>;
+			return {
+				output: (
+					<span style={{ color: 'red' }}>failed to parse command `{cmd}`</span>
+				),
+			};
 		}
 	}
 	const fs = new MemFS();
@@ -34,14 +49,37 @@ export async function execute(cmd: string, file: Uint8Array) {
 	const exitCode = wasi.start();
 	const stdout = wasi.getStdoutString();
 	const stderr = wasi.getStderrString();
-	//console.log(wasi.fs.readDir('/'));
+	const files: File[] = [];
+	for (const file of wasi.fs.readDir('/')) {
+		if (
+			!file?.path ||
+			file.path === '/input_file' ||
+			file.path === '/openssl.cnf'
+		) {
+			continue;
+		}
+		files.push({
+			name: file.path.slice(1),
+			contents: wasi.fs.open(file.path, { read: true }).read(),
+		});
+	}
 	wasi.free();
 
-	return (
+	const noOutput = stderr.trim().length === 0 && stdout.trim().length === 0;
+
+	const output = (
 		<>
 			<span style={{ color: 'red' }}>{stderr}</span>
 			{stdout}
-			{exitCode !== 0 ? (
+			{noOutput ? (
+				<span style={{ fontStyle: 'italic' }}>
+					No console output
+					<br />
+				</span>
+			) : (
+				''
+			)}
+			{exitCode !== 0 || noOutput ? (
 				<>
 					<br />
 					Exit code: {exitCode}
@@ -49,4 +87,6 @@ export async function execute(cmd: string, file: Uint8Array) {
 			) : null}
 		</>
 	);
+
+	return { output, files };
 }
