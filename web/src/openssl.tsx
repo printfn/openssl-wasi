@@ -58,9 +58,13 @@ export async function execute(
 		) {
 			continue;
 		}
+		const contents = wasi.fs.open(file.path, { read: true }).read();
+		if (contents.length === 0) {
+			continue;
+		}
 		files.push({
 			name: file.path.slice(1),
-			contents: wasi.fs.open(file.path, { read: true }).read(),
+			contents,
 		});
 	}
 	files.sort((a, b) => a.name.localeCompare(b.name));
