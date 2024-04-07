@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { ReactElement, useCallback, useEffect, useState } from 'react';
 import { execute } from './openssl';
 import { Container } from 'react-bootstrap';
 import { Buffer } from 'node:buffer';
+import './main.css';
 
 type FileType = 'cert' | 'csr' | 'crl' | 'pkcs#7';
 
@@ -9,13 +10,13 @@ function getCommand(fileType: FileType, pem: boolean) {
 	const fmt = pem ? 'PEM' : 'DER';
 	switch (fileType) {
 		case 'cert':
-			return ['x509', '-in', 'inputfile', '-inform', fmt, '-text', '-noout'];
+			return `openssl x509 -in input_file -inform ${fmt} -text -noout`;
 		case 'csr':
-			return ['req', '-in', 'inputfile', '-inform', fmt, '-text', '-noout'];
+			return `openssl req -in input_file -inform ${fmt} -text -noout`;
 		case 'crl':
-			return ['crl', '-in', 'inputfile', '-inform', fmt, '-text', '-noout'];
+			return `openssl crl -in input_file -inform ${fmt} -text -noout`;
 		case 'pkcs#7':
-			return ['pkcs7', '-in', 'inputfile', '-inform', fmt, '-print', '-noout'];
+			return `openssl pkcs7 -in input_file -inform ${fmt} -print -noout`;
 		default:
 			throw new Error('unknown file type ' + fileType);
 	}
@@ -25,7 +26,7 @@ function App() {
 	const [file, setFile] = useState(new Uint8Array());
 	const [fileType, setFileType] = useState<FileType>('cert');
 	const [pem, setPEM] = useState(true);
-	const [decoded, setDecoded] = useState('');
+	const [decoded, setDecoded] = useState<ReactElement>(<></>);
 
 	useEffect(() => {
 		(async () => {
@@ -50,7 +51,7 @@ function App() {
 
 	return (
 		<Container>
-			<h1>Decode ASN1</h1>
+			<h1>OpenSSL-WASI</h1>
 			<p>
 				<textarea
 					style={{ width: '100%', height: '10rem' }}
@@ -76,7 +77,7 @@ function App() {
 				>
 					<option value="pem">PEM</option>
 					<option value="der">DER</option>
-				</select>
+				</select>{' '}
 				<select
 					value={fileType}
 					onChange={e => setFileType(e.currentTarget.value as FileType)}
@@ -86,6 +87,13 @@ function App() {
 					<option value="crl">Certificate Revocation List</option>
 					<option value="pkcs#7">PKCS #7</option>
 				</select>
+			</p>
+			<p>
+				<input
+					style={{ width: '100%' }}
+					disabled
+					value={getCommand(fileType, pem)}
+				/>
 			</p>
 			<pre>{decoded}</pre>
 		</Container>
