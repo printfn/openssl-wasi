@@ -3,6 +3,7 @@ import { type OpenSSLResult, execute } from './openssl';
 import { Button, Container, Form } from 'react-bootstrap';
 import { Buffer } from 'node:buffer';
 import './main.css';
+import { useSearchParams } from 'react-router-dom';
 
 const FileTypes = [
 	'cert',
@@ -33,7 +34,7 @@ function getCommand(fileType: FileType, pem: boolean) {
 		case 'asn1':
 			return `openssl asn1parse -i -in input_file -inform ${fmt}`;
 		case 'create-csr':
-			return `openssl req -new -newkey ec -pkeyopt ec_paramgen_curve:secp384r1 -keyout - -out - -noenc -subj "/CN=example.com" -outform PEM -text -addext "subjectAltName=DNS:example.com"`;
+			return `openssl req -new -newkey ec -pkeyopt ec_paramgen_curve:secp384r1 -keyout - -out - -noenc  -verify -verbose -subj "/CN=example.com" -outform PEM -text -addext "subjectAltName=DNS:example.com"`;
 		case 'create-rsa':
 			return `openssl genrsa 2048`;
 		case 'create-ecc':
@@ -43,11 +44,62 @@ function getCommand(fileType: FileType, pem: boolean) {
 	}
 }
 
+function toBase64(data: Uint8Array): string {
+	return Buffer.from(data).toString('base64');
+}
+
+function fromBase64(data: string | null | undefined): Uint8Array {
+	if (!data) {
+		return new Uint8Array();
+	}
+	return new Uint8Array(Buffer.from(data, 'base64'));
+}
+
+type AppState = {
+	file: Uint8Array;
+	command: string;
+};
+
+function useAppState() {
+	const [searchParams, setSearchParams] = useSearchParams();
+	const setField = useCallback(
+		<K extends keyof AppState>(key: K, value: string) => {
+			setSearchParams(prev => {
+				prev.set(key, value.toString());
+				return prev;
+			});
+		},
+		[setSearchParams],
+	);
+	const file = useMemo(
+		() => fromBase64(searchParams.get('file') ?? ''),
+		[searchParams],
+	);
+	const command = useMemo(
+		() => searchParams.get('command') ?? getCommand('cert', true),
+		[searchParams],
+	);
+	const setFile = useCallback(
+		(file: Uint8Array) => {
+			setField('file', toBase64(file));
+		},
+		[setField],
+	);
+	const setCommand = useCallback(
+		(command: string) => {
+			setField('command', command);
+		},
+		[setField],
+	);
+	return { file, setFile, command, setCommand };
+}
+
 function App() {
-	const [file, setFile] = useState(new Uint8Array());
-	const [command, setCommand] = useState(getCommand('cert', true));
+	const { command, file, setCommand, setFile } = useAppState();
+
 	const [result, setResult] = useState<OpenSSLResult>({ output: <></> });
 	const [autoExecute, setAutoExecute] = useState(true);
+
 	const pem = useMemo(() => {
 		if (command.includes('-inform PEM')) {
 			return true;
@@ -103,15 +155,11 @@ function App() {
 					onChange={e => {
 						setFile(
 							der
-								? new Uint8Array(Buffer.from(e.currentTarget.value, 'base64'))
+								? fromBase64(e.currentTarget.value)
 								: new TextEncoder().encode(e.currentTarget.value),
 						);
 					}}
-					value={
-						der
-							? Buffer.from(file).toString('base64')
-							: new TextDecoder().decode(file)
-					}
+					value={der ? toBase64(file) : new TextDecoder().decode(file)}
 				/>
 				<input
 					type="file"
