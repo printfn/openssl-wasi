@@ -34,6 +34,8 @@ export async function execute(cmd: string, file: Uint8Array) {
 	const exitCode = wasi.start();
 	const stdout = wasi.getStdoutString();
 	const stderr = wasi.getStderrString();
+	//console.log(wasi.fs.readDir('/'));
+	wasi.free();
 
 	return (
 		<>

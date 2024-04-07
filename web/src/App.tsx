@@ -9,6 +9,7 @@ const FileTypes = [
 	'csr',
 	'crl',
 	'pkcs7',
+	'pkcs12',
 	'asn1',
 	'create-csr',
 	'create-rsa',
@@ -27,6 +28,8 @@ function getCommand(fileType: FileType, pem: boolean) {
 			return `openssl crl -in input_file -inform ${fmt} -text -noout`;
 		case 'pkcs7':
 			return `openssl pkcs7 -in input_file -inform ${fmt} -print -noout`;
+		case 'pkcs12':
+			return `openssl pkcs12 -passin pass:'Pa55w0rd' -in input_file -noenc`;
 		case 'asn1':
 			return `openssl asn1parse -i -in input_file -inform ${fmt}`;
 		case 'create-csr':
@@ -49,7 +52,7 @@ function App() {
 		if (command.includes('-inform PEM')) {
 			return true;
 		}
-		if (command.includes('-inform DER')) {
+		if (command.includes('-inform DER') || command.includes('openssl pkcs12')) {
 			return false;
 		}
 		return undefined;
@@ -145,6 +148,7 @@ function App() {
 						<option value="csr">Certificate Signing Request</option>
 						<option value="crl">Certificate Revocation List</option>
 						<option value="pkcs7">PKCS #7</option>
+						<option value="pkcs12">PKCS #12</option>
 						<option value="asn1">ASN.1</option>
 					</optgroup>
 					<optgroup label="Create">
@@ -163,7 +167,7 @@ function App() {
 					}}
 				/>
 			</p>
-			<p>
+			<div className="mb-3">
 				<Form.Switch
 					id="auto-execute"
 					label="Auto-execute"
@@ -181,7 +185,7 @@ function App() {
 				>
 					Execute
 				</Button>
-			</p>
+			</div>
 			<pre>{decoded}</pre>
 		</Container>
 	);
