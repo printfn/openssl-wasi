@@ -18,6 +18,9 @@ const FileTypes = [
 	'create-cert',
 	'create-rsa',
 	'create-ecc',
+	'pkcs7-certs-crls',
+	'pkcs12-certs',
+	'pkcs12-keys',
 ] as const;
 type FileType = (typeof FileTypes)[number];
 
@@ -44,6 +47,12 @@ function getCommand(fileType: FileType, pem: boolean) {
 			return `openssl genrsa -out private.key 2048`;
 		case 'create-ecc':
 			return `openssl ecparam -name secp384r1 -text -out private.key -genkey`;
+		case 'pkcs7-certs-crls':
+			return `openssl pkcs7 -in input_file -inform ${fmt} -out cert.crt -print_certs`;
+		case 'pkcs12-certs':
+			return `openssl pkcs12 -passin pass:'Pa55w0rd' -in input_file -nokeys -clcerts -out cert.crt`;
+		case 'pkcs12-keys':
+			return `openssl pkcs12 -passin pass:'Pa55w0rd' -in input_file -nocerts -noenc -out private.key`;
 		default:
 			throw new Error('unknown file type');
 	}
@@ -210,6 +219,13 @@ function App() {
 						<option value="create-csr">Certificate Signing Request</option>
 						<option value="create-cert">Self-Signed Certificate</option>
 					</optgroup>
+					<optgroup label="Extract">
+						<option value="pkcs7-certs-crls">
+							PKCS #7 Certificates and CRLs
+						</option>
+						<option value="pkcs12-certs">PKCS #12 Certificate(s)</option>
+						<option value="pkcs12-keys">PKCS #12 Private Key(s)</option>
+					</optgroup>
 				</select>
 			</p>
 			<p>
@@ -240,9 +256,10 @@ function App() {
 					Execute
 				</Button>
 			</div>
+			<hr />
 			{result.files && result.files.length > 0 && (
 				<div className="mb-3">
-					<h4>Output Files:</h4>
+					<h4>Output File{result.files.length === 1 ? '' : 's'}:</h4>
 					{result.files?.map(file => (
 						<div key={file.name}>
 							<pre>{new TextDecoder().decode(file.contents)}</pre>
@@ -252,8 +269,8 @@ function App() {
 									download={file.name}
 								>
 									<Button variant="secondary">
-										<i className="fa-solid fa-download" />{' '}
-										{file.name} ({file.contents.length} bytes)
+										<i className="fa-solid fa-download" /> {file.name} (
+										{file.contents.length} bytes)
 									</Button>
 								</a>
 							</div>
