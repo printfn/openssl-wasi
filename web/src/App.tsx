@@ -13,6 +13,7 @@ const FileTypes = [
 	'pkcs12',
 	'asn1',
 	'create-csr',
+	'create-cert',
 	'create-rsa',
 	'create-ecc',
 ] as const;
@@ -35,6 +36,8 @@ function getCommand(fileType: FileType, pem: boolean) {
 			return `openssl asn1parse -i -in input_file -inform ${fmt}`;
 		case 'create-csr':
 			return `openssl req -new -newkey ec -pkeyopt ec_paramgen_curve:secp384r1 -keyout - -out - -noenc  -verify -verbose -subj "/CN=example.com" -outform PEM -text -addext "subjectAltName=DNS:example.com"`;
+		case 'create-cert':
+			return `openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:secp384r1 -keyout - -out - -verbose -sha256 -days 7 -noenc -subj "/CN=example.com" -text -addext "subjectAltName=DNS:example.com"`;
 		case 'create-rsa':
 			return `openssl genrsa 2048`;
 		case 'create-ecc':
@@ -203,6 +206,7 @@ function App() {
 						<option value="create-ecc">ECC Private Key</option>
 						<option value="create-rsa">RSA Private Key</option>
 						<option value="create-csr">Certificate Signing Request</option>
+						<option value="create-cert">Self-Signed Certificate</option>
 					</optgroup>
 				</select>
 			</p>
