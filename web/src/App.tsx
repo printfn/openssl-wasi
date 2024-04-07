@@ -1,10 +1,11 @@
 import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
 import { execute } from './openssl';
-import { Container } from 'react-bootstrap';
+import { Button, Container, Form } from 'react-bootstrap';
 import { Buffer } from 'node:buffer';
 import './main.css';
 
-type FileType = 'cert' | 'csr' | 'crl' | 'pkcs#7';
+type FileType = 'cert' | 'csr' | 'crl' | 'pkcs#7' | 'create-csr';
+const FileTypes: FileType[] = ['cert', 'csr', 'crl', 'pkcs#7', 'create-csr'];
 
 function getCommand(fileType: FileType, pem: boolean) {
 	const fmt = pem ? 'PEM' : 'DER';
@@ -17,6 +18,8 @@ function getCommand(fileType: FileType, pem: boolean) {
 			return `openssl crl -in input_file -inform ${fmt} -text -noout`;
 		case 'pkcs#7':
 			return `openssl pkcs7 -in input_file -inform ${fmt} -print -noout`;
+		case 'create-csr':
+			return `openssl req -new -keyout - -out - -noenc -subj "/CN=example.com" -outform PEM -text -addext "subjectAltName=DNS:example.com"`;
 		default:
 			throw new Error('unknown file type');
 	}
@@ -24,17 +27,31 @@ function getCommand(fileType: FileType, pem: boolean) {
 
 function App() {
 	const [file, setFile] = useState(new Uint8Array());
-	const [fileType, setFileType] = useState<FileType>('cert');
-	const [pem, setPEM] = useState(true);
+	const [command, setCommand] = useState(getCommand('cert', true));
 	const [decoded, setDecoded] = useState<ReactElement>(<></>);
-	const command = useMemo(() => getCommand(fileType, pem), [fileType, pem]);
+	const [autoExecute, setAutoExecute] = useState(true);
+	const pem = useMemo(() => command.includes('-inform PEM'), [command]);
+	const fileType = useMemo(() => {
+		for (const f of FileTypes) {
+			if (getCommand(f, pem) === command) {
+				return f;
+			}
+		}
+		return undefined;
+	}, [command, pem]);
 
-	useEffect(() => {
+	const executeCommand = useCallback(() => {
 		(async () => {
 			const result = await execute(command, file);
 			setDecoded(result);
 		})();
 	}, [file, command]);
+
+	useEffect(() => {
+		if (autoExecute) {
+			executeCommand();
+		}
+	}, [autoExecute, executeCommand]);
 
 	const decodeFile = useCallback(
 		(files: FileList | null) => {
@@ -80,7 +97,8 @@ function App() {
 				<select
 					value={pem ? 'pem' : 'der'}
 					onChange={e => {
-						setPEM(e.currentTarget.value === 'pem');
+						fileType &&
+							setCommand(getCommand(fileType, e.currentTarget.value === 'pem'));
 					}}
 				>
 					<option value="pem">PEM</option>
@@ -89,17 +107,47 @@ function App() {
 				<select
 					value={fileType}
 					onChange={e => {
-						setFileType(e.currentTarget.value as FileType);
+						setCommand(getCommand(e.currentTarget.value as FileType, pem));
 					}}
 				>
-					<option value="cert">Certificate</option>
-					<option value="csr">Certificate Signing Request</option>
-					<option value="crl">Certificate Revocation List</option>
-					<option value="pkcs#7">PKCS #7</option>
+					<optgroup label="Decode">
+						<option value="cert">Certificate</option>
+						<option value="csr">Certificate Signing Request</option>
+						<option value="crl">Certificate Revocation List</option>
+						<option value="pkcs#7">PKCS #7</option>
+					</optgroup>
+					<optgroup label="Create">
+						<option value="create-csr">Create CSR</option>
+					</optgroup>
 				</select>
 			</p>
 			<p>
-				<input style={{ width: '100%' }} disabled value={command} />
+				<textarea
+					style={{ width: '100%' }}
+					value={command}
+					onChange={e => {
+						setCommand(e.currentTarget.value);
+					}}
+				/>
+			</p>
+			<p>
+				<Form.Switch
+					id="auto-execute"
+					label="Auto-execute"
+					checked={autoExecute}
+					onChange={e => {
+						setAutoExecute(e.currentTarget.checked);
+					}}
+				/>
+				<Button
+					variant="primary"
+					disabled={autoExecute}
+					onClick={() => {
+						executeCommand();
+					}}
+				>
+					Execute
+				</Button>
 			</p>
 			<pre>{decoded}</pre>
 		</Container>
