@@ -18,6 +18,7 @@ const FileTypes = [
 	'create-cert',
 	'create-rsa',
 	'create-ecc',
+	'create-digest',
 	'pkcs7-certs-crls',
 	'pkcs12-certs',
 	'pkcs12-keys',
@@ -47,6 +48,8 @@ function getCommand(fileType: FileType, pem: boolean) {
 			return `openssl genrsa -out private.key 2048`;
 		case 'create-ecc':
 			return `openssl ecparam -name secp384r1 -text -out private.key -genkey`;
+		case 'create-digest':
+			return `openssl dgst -sha256 -out signature.bin input_file`;
 		case 'pkcs7-certs-crls':
 			return `openssl pkcs7 -in input_file -inform ${fmt} -out cert.crt -print_certs`;
 		case 'pkcs12-certs':
@@ -246,6 +249,7 @@ function App() {
 						<option value="create-rsa">RSA Private Key</option>
 						<option value="create-csr">Certificate Signing Request</option>
 						<option value="create-cert">Self-Signed Certificate</option>
+						<option value="create-digest">Message Digest</option>
 					</optgroup>
 					<optgroup label="Extract">
 						<option value="pkcs7-certs-crls">
