@@ -37,8 +37,8 @@ export async function execute(cmd: string, file: Uint8Array) {
 
 	return (
 		<>
-			{stdout}
 			<span style={{ color: 'red' }}>{stderr}</span>
+			{stdout}
 			{exitCode !== 0 ? (
 				<>
 					<br />
