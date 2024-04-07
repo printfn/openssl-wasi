@@ -6,6 +6,7 @@ export default defineConfig({
 	base: '/openssl-wasi/',
 	build: {
 		target: 'esnext',
+		sourcemap: true,
 	},
 	plugins: [react(), nodePolyfills()],
 });

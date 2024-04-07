@@ -30,7 +30,7 @@ function App() {
 	const command = useMemo(() => getCommand(fileType, pem), [fileType, pem]);
 
 	useEffect(() => {
-		void (async () => {
+		(async () => {
 			const result = await execute(command, file);
 			setDecoded(result);
 		})();
@@ -43,7 +43,7 @@ function App() {
 				return;
 			}
 
-			void (async () => {
+			(async () => {
 				setFile(new Uint8Array(await files[0].arrayBuffer()));
 			})();
 		},
