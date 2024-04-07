@@ -1,4 +1,4 @@
-import { ReactElement, useCallback, useEffect, useState } from 'react';
+import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
 import { execute } from './openssl';
 import { Container } from 'react-bootstrap';
 import { Buffer } from 'node:buffer';
@@ -18,7 +18,7 @@ function getCommand(fileType: FileType, pem: boolean) {
 		case 'pkcs#7':
 			return `openssl pkcs7 -in input_file -inform ${fmt} -print -noout`;
 		default:
-			throw new Error('unknown file type ' + fileType);
+			throw new Error('unknown file type');
 	}
 }
 
@@ -27,22 +27,23 @@ function App() {
 	const [fileType, setFileType] = useState<FileType>('cert');
 	const [pem, setPEM] = useState(true);
 	const [decoded, setDecoded] = useState<ReactElement>(<></>);
+	const command = useMemo(() => getCommand(fileType, pem), [fileType, pem]);
 
 	useEffect(() => {
-		(async () => {
-			const result = await execute(getCommand(fileType, pem), file);
+		void (async () => {
+			const result = await execute(command, file);
 			setDecoded(result);
 		})();
-	}, [file, pem, fileType]);
+	}, [file, command]);
 
 	const decodeFile = useCallback(
 		(files: FileList | null) => {
-			if (!files || !files[0]) {
+			if (!files?.[0]) {
 				setFile(new Uint8Array());
 				return;
 			}
 
-			(async () => {
+			void (async () => {
 				setFile(new Uint8Array(await files[0].arrayBuffer()));
 			})();
 		},
@@ -55,32 +56,41 @@ function App() {
 			<p>
 				<textarea
 					style={{ width: '100%', height: '10rem' }}
-					onChange={e =>
+					onChange={e => {
 						setFile(
 							pem
 								? new TextEncoder().encode(e.currentTarget.value)
 								: new Uint8Array(Buffer.from(e.currentTarget.value, 'base64')),
-						)
-					}
+						);
+					}}
 					value={
 						pem
 							? new TextDecoder().decode(file)
 							: Buffer.from(file).toString('base64')
 					}
 				/>
-				<input type="file" onChange={e => decodeFile(e.currentTarget.files)} />
+				<input
+					type="file"
+					onChange={e => {
+						decodeFile(e.currentTarget.files);
+					}}
+				/>
 			</p>
 			<p>
 				<select
 					value={pem ? 'pem' : 'der'}
-					onChange={e => setPEM(e.currentTarget.value === 'pem')}
+					onChange={e => {
+						setPEM(e.currentTarget.value === 'pem');
+					}}
 				>
 					<option value="pem">PEM</option>
 					<option value="der">DER</option>
 				</select>{' '}
 				<select
 					value={fileType}
-					onChange={e => setFileType(e.currentTarget.value as FileType)}
+					onChange={e => {
+						setFileType(e.currentTarget.value as FileType);
+					}}
 				>
 					<option value="cert">Certificate</option>
 					<option value="csr">Certificate Signing Request</option>
@@ -89,11 +99,7 @@ function App() {
 				</select>
 			</p>
 			<p>
-				<input
-					style={{ width: '100%' }}
-					disabled
-					value={getCommand(fileType, pem)}
-				/>
+				<input style={{ width: '100%' }} disabled value={command} />
 			</p>
 			<pre>{decoded}</pre>
 		</Container>
