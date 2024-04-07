@@ -47,8 +47,8 @@ export async function execute(
 
 	// Run the start function
 	const exitCode = wasi.start();
-	const stdout = wasi.getStdoutString();
-	const stderr = wasi.getStderrString();
+	const stdout = new TextDecoder().decode(wasi.getStdoutBuffer());
+	const stderr = new TextDecoder().decode(wasi.getStderrBuffer());
 	const files: File[] = [];
 	for (const file of wasi.fs.readDir('/')) {
 		if (
