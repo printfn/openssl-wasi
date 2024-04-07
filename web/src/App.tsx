@@ -4,8 +4,16 @@ import { Button, Container, Form } from 'react-bootstrap';
 import { Buffer } from 'node:buffer';
 import './main.css';
 
-type FileType = 'cert' | 'csr' | 'crl' | 'pkcs#7' | 'create-csr';
-const FileTypes: FileType[] = ['cert', 'csr', 'crl', 'pkcs#7', 'create-csr'];
+const FileTypes = [
+	'cert',
+	'csr',
+	'crl',
+	'pkcs#7',
+	'create-csr',
+	'create-rsa',
+	'create-ecc',
+] as const;
+type FileType = (typeof FileTypes)[number];
 
 function getCommand(fileType: FileType, pem: boolean) {
 	const fmt = pem ? 'PEM' : 'DER';
@@ -19,7 +27,11 @@ function getCommand(fileType: FileType, pem: boolean) {
 		case 'pkcs#7':
 			return `openssl pkcs7 -in input_file -inform ${fmt} -print -noout`;
 		case 'create-csr':
-			return `openssl req -new -keyout - -out - -noenc -subj "/CN=example.com" -outform PEM -text -addext "subjectAltName=DNS:example.com"`;
+			return `openssl req -new -newkey ec -pkeyopt ec_paramgen_curve:secp384r1 -keyout - -out - -noenc -subj "/CN=example.com" -outform PEM -text -addext "subjectAltName=DNS:example.com"`;
+		case 'create-rsa':
+			return `openssl genrsa 2048`;
+		case 'create-ecc':
+			return `openssl ecparam -name secp384r1 -text -noout -genkey`;
 		default:
 			throw new Error('unknown file type');
 	}
@@ -30,15 +42,23 @@ function App() {
 	const [command, setCommand] = useState(getCommand('cert', true));
 	const [decoded, setDecoded] = useState<ReactElement>(<></>);
 	const [autoExecute, setAutoExecute] = useState(true);
-	const pem = useMemo(() => command.includes('-inform PEM'), [command]);
+	const pem = useMemo(() => {
+		if (command.includes('-inform PEM')) {
+			return true;
+		}
+		if (command.includes('-inform DER')) {
+			return false;
+		}
+		return undefined;
+	}, [command]);
 	const fileType = useMemo(() => {
 		for (const f of FileTypes) {
-			if (getCommand(f, pem) === command) {
+			if (getCommand(f, true) === command || getCommand(f, false) === command) {
 				return f;
 			}
 		}
 		return undefined;
-	}, [command, pem]);
+	}, [command]);
 
 	const executeCommand = useCallback(() => {
 		(async () => {
@@ -95,6 +115,7 @@ function App() {
 			</p>
 			<p>
 				<select
+					disabled={pem === undefined}
 					value={pem ? 'pem' : 'der'}
 					onChange={e => {
 						fileType &&
@@ -107,7 +128,12 @@ function App() {
 				<select
 					value={fileType}
 					onChange={e => {
-						setCommand(getCommand(e.currentTarget.value as FileType, pem));
+						setCommand(
+							getCommand(
+								e.currentTarget.value as FileType,
+								pem === undefined ? true : pem,
+							),
+						);
 					}}
 				>
 					<optgroup label="Decode">
@@ -117,7 +143,9 @@ function App() {
 						<option value="pkcs#7">PKCS #7</option>
 					</optgroup>
 					<optgroup label="Create">
-						<option value="create-csr">Create CSR</option>
+						<option value="create-ecc">ECC Private Key</option>
+						<option value="create-rsa">RSA Private Key</option>
+						<option value="create-csr">Certificate Signing Request</option>
 					</optgroup>
 				</select>
 			</p>
