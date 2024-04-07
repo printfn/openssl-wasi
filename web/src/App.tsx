@@ -3,6 +3,8 @@ import { type OpenSSLResult, execute } from './openssl';
 import { Button, Container, Form } from 'react-bootstrap';
 import { Buffer } from 'node:buffer';
 import './main.css';
+import '@fortawesome/fontawesome-free/css/all.min.css';
+import '@fortawesome/fontawesome-free/css/svg-with-js.css';
 import { useSearchParams } from 'react-router-dom';
 
 const FileTypes = [
@@ -35,13 +37,13 @@ function getCommand(fileType: FileType, pem: boolean) {
 		case 'asn1':
 			return `openssl asn1parse -i -in input_file -inform ${fmt}`;
 		case 'create-csr':
-			return `openssl req -new -newkey ec -pkeyopt ec_paramgen_curve:secp384r1 -keyout - -out - -noenc  -verify -verbose -subj "/CN=example.com" -outform PEM -text -addext "subjectAltName=DNS:example.com"`;
+			return `openssl req -new -newkey ec -pkeyopt ec_paramgen_curve:secp384r1 -keyout private.key -out csr.req -noenc  -verify -verbose -subj "/CN=example.com" -outform PEM -text -addext "subjectAltName=DNS:example.com"`;
 		case 'create-cert':
-			return `openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:secp384r1 -keyout - -out - -verbose -sha256 -days 7 -noenc -subj "/CN=example.com" -text -addext "subjectAltName=DNS:example.com"`;
+			return `openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:secp384r1 -keyout private.key -out certificate.crt -verbose -sha256 -days 7 -noenc -subj "/CN=example.com" -text -addext "subjectAltName=DNS:example.com"`;
 		case 'create-rsa':
-			return `openssl genrsa 2048`;
+			return `openssl genrsa -out private.key 2048`;
 		case 'create-ecc':
-			return `openssl ecparam -name secp384r1 -text -noout -genkey`;
+			return `openssl ecparam -name secp384r1 -text -out private.key -genkey`;
 		default:
 			throw new Error('unknown file type');
 	}
@@ -242,19 +244,24 @@ function App() {
 				<div className="mb-3">
 					<h4>Output Files:</h4>
 					{result.files?.map(file => (
-						<a
-							key={file.name}
-							className="me-1"
-							href={`data:application/octet-stream;base64,${Buffer.from(file.contents).toString('base64')}`}
-							download={file.name}
-						>
-							<Button variant="secondary">
-								{file.name} ({file.contents.length} bytes)
-							</Button>
-						</a>
+						<div key={file.name}>
+							<pre>{new TextDecoder().decode(file.contents)}</pre>
+							<div className="mb-3">
+								<a
+									href={`data:application/octet-stream;base64,${Buffer.from(file.contents).toString('base64')}`}
+									download={file.name}
+								>
+									<Button variant="secondary">
+										<i className="fa-solid fa-download" />{' '}
+										{file.name} ({file.contents.length} bytes)
+									</Button>
+								</a>
+							</div>
+						</div>
 					))}
 				</div>
 			)}
+			<h4>Terminal Output:</h4>
 			<pre>{result.output}</pre>
 		</Container>
 	);

@@ -11,6 +11,9 @@
 		"format": "prettier --write ."
 	},
 	"dependencies": {
+		"@fortawesome/fontawesome-free": "^6.5.2",
+		"@fortawesome/fontawesome-svg-core": "^6.5.2",
+		"@fortawesome/free-solid-svg-icons": "^6.5.2",
 		"@wasmer/sdk": "^0.6.0",
 		"@wasmer/wasi": "^1.2.2",
 		"bootstrap": "^5.3.3",
