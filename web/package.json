@@ -21,20 +21,20 @@
 		"shell-quote": "^1.8.1"
 	},
 	"devDependencies": {
-		"@types/node": "^20.12.4",
+		"@types/node": "^20.12.5",
 		"@types/prop-types": "^15.7.12",
-		"@types/react": "^18.2.66",
-		"@types/react-dom": "^18.2.22",
+		"@types/react": "^18.2.74",
+		"@types/react-dom": "^18.2.24",
 		"@types/shell-quote": "^1.7.5",
-		"@typescript-eslint/eslint-plugin": "^7.2.0",
-		"@typescript-eslint/parser": "^7.2.0",
-		"@vitejs/plugin-react-swc": "^3.5.0",
+		"@typescript-eslint/eslint-plugin": "^7.5.0",
+		"@typescript-eslint/parser": "^7.5.0",
+		"@vitejs/plugin-react-swc": "^3.6.0",
 		"eslint": "^8.57.0",
 		"eslint-plugin-react-hooks": "^4.6.0",
 		"eslint-plugin-react-refresh": "^0.4.6",
 		"prettier": "^3.2.5",
-		"typescript": "^5.2.2",
-		"vite": "^5.2.0",
+		"typescript": "^5.4.4",
+		"vite": "^5.2.8",
 		"vite-plugin-node-polyfills": "^0.21.0"
 	},
 	"prettier": {
