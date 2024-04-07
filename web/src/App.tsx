@@ -78,10 +78,13 @@ function useAppState() {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const setField = useCallback(
 		<K extends keyof AppState>(key: K, value: string) => {
-			setSearchParams(prev => {
-				prev.set(key, value.toString());
-				return prev;
-			});
+			setSearchParams(
+				prev => {
+					prev.set(key, value.toString());
+					return prev;
+				},
+				{ replace: true },
+			);
 		},
 		[setSearchParams],
 	);
