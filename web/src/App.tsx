@@ -8,7 +8,8 @@ const FileTypes = [
 	'cert',
 	'csr',
 	'crl',
-	'pkcs#7',
+	'pkcs7',
+	'asn1',
 	'create-csr',
 	'create-rsa',
 	'create-ecc',
@@ -21,11 +22,13 @@ function getCommand(fileType: FileType, pem: boolean) {
 		case 'cert':
 			return `openssl x509 -in input_file -inform ${fmt} -text -noout`;
 		case 'csr':
-			return `openssl req -in input_file -inform ${fmt} -text -noout`;
+			return `openssl req -in input_file -inform ${fmt} -text -noout -verify`;
 		case 'crl':
 			return `openssl crl -in input_file -inform ${fmt} -text -noout`;
-		case 'pkcs#7':
+		case 'pkcs7':
 			return `openssl pkcs7 -in input_file -inform ${fmt} -print -noout`;
+		case 'asn1':
+			return `openssl asn1parse -in input_file -inform ${fmt}`;
 		case 'create-csr':
 			return `openssl req -new -newkey ec -pkeyopt ec_paramgen_curve:secp384r1 -keyout - -out - -noenc -subj "/CN=example.com" -outform PEM -text -addext "subjectAltName=DNS:example.com"`;
 		case 'create-rsa':
@@ -51,6 +54,7 @@ function App() {
 		}
 		return undefined;
 	}, [command]);
+	const der = useMemo(() => pem === false, [pem]);
 	const fileType = useMemo(() => {
 		for (const f of FileTypes) {
 			if (getCommand(f, true) === command || getCommand(f, false) === command) {
@@ -95,15 +99,15 @@ function App() {
 					style={{ width: '100%', height: '10rem' }}
 					onChange={e => {
 						setFile(
-							pem
-								? new TextEncoder().encode(e.currentTarget.value)
-								: new Uint8Array(Buffer.from(e.currentTarget.value, 'base64')),
+							der
+								? new Uint8Array(Buffer.from(e.currentTarget.value, 'base64'))
+								: new TextEncoder().encode(e.currentTarget.value),
 						);
 					}}
 					value={
-						pem
-							? new TextDecoder().decode(file)
-							: Buffer.from(file).toString('base64')
+						der
+							? Buffer.from(file).toString('base64')
+							: new TextDecoder().decode(file)
 					}
 				/>
 				<input
@@ -116,7 +120,7 @@ function App() {
 			<p>
 				<select
 					disabled={pem === undefined}
-					value={pem ? 'pem' : 'der'}
+					value={der ? 'der' : 'pem'}
 					onChange={e => {
 						fileType &&
 							setCommand(getCommand(fileType, e.currentTarget.value === 'pem'));
@@ -140,7 +144,8 @@ function App() {
 						<option value="cert">Certificate</option>
 						<option value="csr">Certificate Signing Request</option>
 						<option value="crl">Certificate Revocation List</option>
-						<option value="pkcs#7">PKCS #7</option>
+						<option value="pkcs7">PKCS #7</option>
+						<option value="asn1">ASN.1</option>
 					</optgroup>
 					<optgroup label="Create">
 						<option value="create-ecc">ECC Private Key</option>
