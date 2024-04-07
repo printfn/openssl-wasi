@@ -28,7 +28,7 @@ function getCommand(fileType: FileType, pem: boolean) {
 		case 'pkcs7':
 			return `openssl pkcs7 -in input_file -inform ${fmt} -print -noout`;
 		case 'asn1':
-			return `openssl asn1parse -in input_file -inform ${fmt}`;
+			return `openssl asn1parse -i -in input_file -inform ${fmt}`;
 		case 'create-csr':
 			return `openssl req -new -newkey ec -pkeyopt ec_paramgen_curve:secp384r1 -keyout - -out - -noenc -subj "/CN=example.com" -outform PEM -text -addext "subjectAltName=DNS:example.com"`;
 		case 'create-rsa':
