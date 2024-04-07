@@ -78,7 +78,7 @@ export async function execute(
 			{stdout}
 			{noOutput ? (
 				<span style={{ fontStyle: 'italic' }}>
-					No console output
+					No output
 					<br />
 				</span>
 			) : (

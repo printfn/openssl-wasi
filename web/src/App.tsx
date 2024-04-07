@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { type OpenSSLResult, execute } from './openssl';
 import { Button, Container, Form } from 'react-bootstrap';
 import { Buffer } from 'node:buffer';
@@ -59,7 +59,9 @@ function getCommand(fileType: FileType, pem: boolean) {
 }
 
 function toBase64(data: Uint8Array): string {
-	return Buffer.from(data).toString('base64');
+	return Buffer.from(data)
+		.toString('base64')
+		.replace(/(.{64})/g, '$1\n');
 }
 
 function fromBase64(data: string | null | undefined): Uint8Array {
@@ -67,6 +69,29 @@ function fromBase64(data: string | null | undefined): Uint8Array {
 		return new Uint8Array();
 	}
 	return new Uint8Array(Buffer.from(data, 'base64'));
+}
+
+function displayFile(file: Uint8Array): ReactNode {
+	for (let i = 0; i < file.length; ++i) {
+		if (file[i] === 10 || file[i] === 13 || file[i] === 9) {
+			continue;
+		}
+		if (file[i] <= 31 || file[i] >= 127) {
+			return (
+				<>
+					<span style={{ fontStyle: 'italic' }}>
+						This file contains non-printable characters.
+						<br />
+						Rendering as base64:
+						<br />
+						<br />
+					</span>
+					{toBase64(file)}
+				</>
+			);
+		}
+	}
+	return new TextDecoder().decode(file);
 }
 
 type AppState = {
@@ -168,7 +193,7 @@ function App() {
 			<h1>OpenSSL-WASI</h1>
 			<p>
 				<textarea
-					style={{ width: '100%', height: '10rem' }}
+					style={{ width: '100%', height: '10rem', fontFamily: 'monospace' }}
 					onChange={e => {
 						setFile(
 							der
@@ -265,7 +290,7 @@ function App() {
 					<h4>Output File{result.files.length === 1 ? '' : 's'}:</h4>
 					{result.files?.map(file => (
 						<div key={file.name}>
-							<pre>{new TextDecoder().decode(file.contents)}</pre>
+							<pre>{displayFile(file.contents)}</pre>
 							<div className="mb-3">
 								<a
 									href={`data:application/octet-stream;base64,${Buffer.from(file.contents).toString('base64')}`}
