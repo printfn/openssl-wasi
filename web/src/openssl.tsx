@@ -4,6 +4,8 @@ import { parse } from 'shell-quote';
 import { ReactElement } from 'react';
 
 await init();
+const moduleBytes = fetch(opensslURL);
+const module = await WebAssembly.compileStreaming(moduleBytes);
 
 type File = { name: string; contents: Uint8Array };
 
@@ -40,8 +42,6 @@ export async function execute(
 		fs,
 	});
 
-	const moduleBytes = fetch(opensslURL);
-	const module = await WebAssembly.compileStreaming(moduleBytes);
 	// Instantiate the WASI module
 	await wasi.instantiate(module, {});
 
