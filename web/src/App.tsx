@@ -160,7 +160,7 @@ function App() {
 			</p>
 			<p>
 				<textarea
-					style={{ width: '100%' }}
+					style={{ width: '100%', fontFamily: 'monospace' }}
 					value={command}
 					onChange={e => {
 						setCommand(e.currentTarget.value);
