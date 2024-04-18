@@ -35,18 +35,6 @@ index b978323f56..13ab33420e 100644
  #include <stdio.h>
  #include <stdlib.h>
  #include <string.h>
-diff --git a/crypto/asn1/a_time.c b/crypto/asn1/a_time.c
-index b4a0f9918a..043e224ed0 100644
---- a/crypto/asn1/a_time.c
-+++ b/crypto/asn1/a_time.c
-@@ -600,6 +600,7 @@ int ASN1_TIME_compare(const ASN1_TIME *a, const ASN1_TIME *b)
- #ifdef WIN32
- # define timezone _timezone
- #endif
-+time_t timegm(struct tm *);
-
- #if defined(__FreeBSD__) || defined(__wasi__)
- # define USE_TIMEGM
 diff --git a/crypto/threads_none.c b/crypto/threads_none.c
 index eb7b036fce..b43c60b8d1 100644
 --- a/crypto/threads_none.c
