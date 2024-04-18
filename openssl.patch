@@ -3,21 +3,20 @@ new file mode 100644
 index 0000000000..1b69ccc643
 --- /dev/null
 +++ b/Configurations/wasm32-wasi.conf
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,15 @@
 +my %targets = (
 +    "wasm32-wasi" => {
 +        inherit_from     => [ "cc" ],
 +        cflags           => add("-arch wasm32 -target wasm32-wasi -Wno-shift-op-parentheses -v -Werror"),
-+        includes         => [ "/usr/include/wasm32-wasi" ],
 +        defines          => [
 +            "HAVE_FORK=0",
 +            "_WASI_EMULATED_SIGNAL",
 +            "_WASI_EMULATED_MMAN",
++            "_WASI_EMULATED_PROCESS_CLOCKS",
 +        ],
 +        asm_arch         => 'wasm32',
-+        ranlib           => "llvm-ranlib-15",
 +        lflags           => add("-arch wasm32 -target wasm32-wasi"),
-+        ex_libs          => add("-lwasi-emulated-signal", "-lwasi-emulated-mman"),
++        ex_libs          => add("-lwasi-emulated-signal", "-lwasi-emulated-mman", "-lwasi-emulated-process-clocks"),
 +    },
 +);
 diff --git a/apps/speed.c b/apps/speed.c
