@@ -30,7 +30,6 @@ jobs:
           export AR="${WASI_SDK_PATH}/bin/llvm-ar"
           export RANLIB="${WASI_SDK_PATH}/bin/llvm-ranlib"
 
-          patch -d openssl -p1 <openssl.patch
           (cd openssl && ./Configure wasm32-wasi no-dgram no-quic no-tests no-ui-console no-sock no-posix-io)
           (cd openssl && make -j$(nproc))
           cp openssl/apps/openssl web/src/assets/openssl.wasm

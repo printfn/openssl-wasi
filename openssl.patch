@@ -20,19 +20,3 @@ index 0000000000..1b69ccc643
 +        ex_libs          => add("-lwasi-emulated-getpid", "-lwasi-emulated-mman", "-lwasi-emulated-signal", "-lwasi-emulated-process-clocks"),
 +    },
 +);
-diff --git a/apps/speed.c b/apps/speed.c
-index b978323f56..13ab33420e 100644
---- a/apps/speed.c
-+++ b/apps/speed.c
-@@ -27,6 +27,11 @@
- /* We need to use some deprecated APIs */
- #define OPENSSL_SUPPRESS_DEPRECATED
-
-+unsigned alarm(unsigned seconds)
-+{
-+    return 0;
-+}
-+
- #include <stdio.h>
- #include <stdlib.h>
- #include <string.h>
