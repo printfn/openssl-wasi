@@ -218,8 +218,9 @@ function App() {
 					disabled={pem === undefined}
 					value={der ? 'der' : 'pem'}
 					onChange={e => {
-						fileType &&
+						if (fileType) {
 							setCommand(getCommand(fileType, e.currentTarget.value === 'pem'));
+						}
 					}}
 				>
 					<option value="pem">PEM</option>
