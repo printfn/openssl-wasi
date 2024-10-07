@@ -1,13 +1,13 @@
-diff --git a/Configurations/wasm32-wasi.conf b/Configurations/wasm32-wasi.conf
+diff --git a/Configurations/wasm32-wasi.conf b/Configurations/wasm32-wasip2.conf
 new file mode 100644
 index 0000000000..1b69ccc643
 --- /dev/null
-+++ b/Configurations/wasm32-wasi.conf
++++ b/Configurations/wasm32-wasip2.conf
 @@ -0,0 +1,16 @@
 +my %targets = (
-+    "wasm32-wasi" => {
++    "wasm32-wasip2" => {
 +        inherit_from     => [ "cc" ],
-+        cflags           => add("-arch wasm32 -target wasm32-wasi -Wno-shift-op-parentheses -v -Werror"),
++        cflags           => add("-arch wasm32 -target wasm32-wasip2 -Wno-shift-op-parentheses -v -Werror"),
 +        defines          => [
 +            "HAVE_FORK=0",
 +            "_WASI_EMULATED_GETPID",
@@ -16,7 +16,7 @@ index 0000000000..1b69ccc643
 +            "_WASI_EMULATED_PROCESS_CLOCKS",
 +        ],
 +        asm_arch         => 'wasm32',
-+        lflags           => add("-arch wasm32 -target wasm32-wasi"),
++        lflags           => add("-arch wasm32 -target wasm32-wasip2"),
 +        ex_libs          => add("-lwasi-emulated-getpid", "-lwasi-emulated-mman", "-lwasi-emulated-signal", "-lwasi-emulated-process-clocks"),
 +    },
 +);

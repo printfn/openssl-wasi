@@ -1,1 +1,3 @@
+/wasi-sdk*
 /web/src/assets/openssl.wasm
+/web/src/assets/openssl-wasi/

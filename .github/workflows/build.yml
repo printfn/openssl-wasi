@@ -31,10 +31,11 @@ jobs:
           export RANLIB="${WASI_SDK_PATH}/bin/llvm-ranlib"
 
           patch -d openssl -p1 <openssl.patch
-          (cd openssl && ./Configure wasm32-wasi no-dgram no-quic no-tests no-ui-console no-sock no-posix-io)
+          (cd openssl && ./Configure wasm32-wasip2 no-dgram no-quic no-tests no-ui-console no-sock no-posix-io)
           (cd openssl && make -j$(nproc))
-          cp openssl/apps/openssl web/src/assets/openssl.wasm
-          (cd web && npm ci && npm run build)
+          (cd web && npm ci)
+          (cd web && npm exec -- jco transpile ../openssl/apps/openssl -o ./src/assets/openssl-wasi --no-nodejs-compat --instantiation async --multi-memory)
+          (cd web && npm run build)
 
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v3
