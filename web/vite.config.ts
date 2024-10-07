@@ -8,5 +8,7 @@ export default defineConfig({
 		target: 'esnext',
 		sourcemap: true,
 	},
-	plugins: [react(), nodePolyfills()],
+	plugins: [react(), nodePolyfills({
+		include: ['buffer'],
+	})],
 });

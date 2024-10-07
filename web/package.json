@@ -11,6 +11,7 @@
 		"format": "prettier --write ."
 	},
 	"dependencies": {
+		"@bytecodealliance/preview2-shim": "^0.17.0",
 		"@fortawesome/fontawesome-free": "^6.6.0",
 		"@fortawesome/fontawesome-svg-core": "^6.6.0",
 		"@fortawesome/free-solid-svg-icons": "^6.6.0",
@@ -24,6 +25,7 @@
 		"shell-quote": "^1.8.1"
 	},
 	"devDependencies": {
+		"@bytecodealliance/jco": "^1.7.0",
 		"@eslint/js": "^9.11.1",
 		"@types/node": "^22.7.4",
 		"@types/react": "^18.3.11",
