@@ -1,11 +1,11 @@
 import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { type OpenSSLResult, execute } from './openssl';
 import { Button, Container, Form } from 'react-bootstrap';
-import { Buffer } from 'node:buffer';
 import './main.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import '@fortawesome/fontawesome-free/css/svg-with-js.css';
 import { useSearchParams } from 'react-router-dom';
+import { parseBase64, toBase64 } from './base64';
 
 const FileTypes = [
 	'cert',
@@ -61,40 +61,67 @@ function getCommand(fileType: FileType, pem: boolean) {
 	}
 }
 
-function toBase64(data: Uint8Array): string {
-	return Buffer.from(data)
-		.toString('base64')
-		.replace(/(.{64})/g, '$1\n');
+function addLineBreaks(s: string) {
+	return s.replace(/(.{64})/g, '$1\n');
 }
 
-function fromBase64(data: string | null | undefined): Uint8Array {
-	if (!data) {
-		return new Uint8Array();
-	}
-	return new Uint8Array(Buffer.from(data, 'base64'));
-}
-
-function displayFile(file: Uint8Array): ReactNode {
+function isBinary(file: Uint8Array) {
 	for (let i = 0; i < file.length; ++i) {
 		if (file[i] === 10 || file[i] === 13 || file[i] === 9) {
 			continue;
 		}
 		if (file[i] <= 31 || file[i] >= 127) {
-			return (
-				<>
-					<span style={{ fontStyle: 'italic' }}>
-						This file contains non-printable characters.
-						<br />
-						Rendering as base64:
-						<br />
-						<br />
-					</span>
-					{toBase64(file)}
-				</>
-			);
+			return true;
 		}
 	}
-	return new TextDecoder().decode(file);
+	return false;
+}
+
+function DisplayFile({
+	contents,
+	name,
+}: {
+	contents: Uint8Array;
+	name: string;
+}): ReactNode {
+	const [base64File, setBase64File] = useState('');
+	useEffect(() => {
+		(async () => {
+			setBase64File(await toBase64(contents));
+		})();
+	}, [contents]);
+
+	const elem = isBinary(contents) ? (
+		<>
+			<span style={{ fontStyle: 'italic' }}>
+				This file contains non-printable characters.
+				<br />
+				Rendering as base64:
+				<br />
+				<br />
+			</span>
+			{addLineBreaks(base64File)}
+		</>
+	) : (
+		new TextDecoder().decode(contents)
+	);
+
+	return (
+		<>
+			<pre>{elem}</pre>
+			<div className="mb-3">
+				<a
+					href={`data:application/octet-stream;base64,${base64File}`}
+					download={name}
+				>
+					<Button variant="secondary">
+						<i className="fa-solid fa-download" /> {name} ({contents.length}{' '}
+						bytes)
+					</Button>
+				</a>
+			</div>
+		</>
+	);
 }
 
 type AppState = {
@@ -116,17 +143,22 @@ function useAppState() {
 		},
 		[setSearchParams],
 	);
-	const file = useMemo(
-		() => fromBase64(searchParams.get('file') ?? ''),
-		[searchParams],
-	);
+	const [file, setFileState] = useState<ArrayBuffer>(new Uint8Array().buffer);
+	useEffect(() => {
+		(async () => {
+			setFileState(await parseBase64(searchParams.get('file') ?? ''));
+		})();
+	}, [searchParams]);
 	const command = useMemo(
 		() => searchParams.get('command') ?? getCommand('cert', true),
 		[searchParams],
 	);
 	const setFile = useCallback(
-		(file: Uint8Array) => {
-			setField('file', toBase64(file));
+		async (file: ArrayBuffer | (() => Promise<ArrayBuffer>)) => {
+			if (typeof file === 'function') {
+				file = await file();
+			}
+			setField('file', await toBase64(file));
 		},
 		[setField],
 	);
@@ -191,20 +223,29 @@ function App() {
 		[setFile],
 	);
 
+	const [base64File, setBase64File] = useState('');
+	useEffect(() => {
+		(async () => {
+			setBase64File(await toBase64(file));
+		})();
+	}, [file]);
+
 	return (
 		<Container>
 			<h1>OpenSSL-WASI</h1>
 			<p>
 				<textarea
 					style={{ width: '100%', height: '10rem', fontFamily: 'monospace' }}
-					onChange={e => {
-						setFile(
+					onChange={async e => {
+						setFile(async () =>
 							der
-								? fromBase64(e.currentTarget.value)
+								? await parseBase64(e.currentTarget.value)
 								: new TextEncoder().encode(e.currentTarget.value),
 						);
 					}}
-					value={der ? toBase64(file) : new TextDecoder().decode(file)}
+					value={
+						der ? addLineBreaks(base64File) : new TextDecoder().decode(file)
+					}
 				/>
 				<input
 					type="file"
@@ -295,18 +336,7 @@ function App() {
 					<h4>Output File{result.files.length === 1 ? '' : 's'}:</h4>
 					{result.files?.map(file => (
 						<div key={file.name}>
-							<pre>{displayFile(file.contents)}</pre>
-							<div className="mb-3">
-								<a
-									href={`data:application/octet-stream;base64,${Buffer.from(file.contents).toString('base64')}`}
-									download={file.name}
-								>
-									<Button variant="secondary">
-										<i className="fa-solid fa-download" /> {file.name} (
-										{file.contents.length} bytes)
-									</Button>
-								</a>
-							</div>
+							<DisplayFile contents={file.contents} name={file.name} />
 						</div>
 					))}
 				</div>

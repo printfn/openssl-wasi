@@ -23,7 +23,7 @@ class ExitError {
 
 export async function execute(
 	cmd: string,
-	file: Uint8Array,
+	file: ArrayBuffer,
 ): Promise<OpenSSLResult> {
 	const parsed = parse(cmd);
 	const args: string[] = [];
@@ -40,9 +40,11 @@ export async function execute(
 		}
 	}
 	console.log('Running command', args);
-	// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-	// @ts-expect-error
-	const preopens: [Descriptor, string][] = [[new wasip2.filesystem.types.Descriptor({ dir: {} }), '/']];
+	const preopens: [Descriptor, string][] = [
+		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+		// @ts-expect-error
+		[new wasip2.filesystem.types.Descriptor({ dir: {} }), '/'],
+	];
 	preopens[0][0]
 		.openAt({}, 'openssl.cnf', { create: true }, { write: true })
 		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -52,7 +54,7 @@ export async function execute(
 		.openAt({}, 'input_file', { create: true }, { write: true })
 		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 		// @ts-expect-error
-		.write(file, 0);
+		.write(new Uint8Array(file), 0);
 	let stdout = '';
 	let stderr = '';
 	// eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -73,43 +75,49 @@ export async function execute(
 		blockingFlush() {},
 		[Symbol.dispose]() {},
 	});
-	const { run } = await instantiate(url => fetch(new URL(`./assets/openssl-wasi/${url}`, import.meta.url)).then(WebAssembly.compileStreaming), {
-		"wasi:cli/environment": {
-			getArguments: () => args,
-			getEnvironment: () => [['OPENSSL_CONF', '/openssl.cnf']],
-		},
-		"wasi:cli/exit": {
-			exit: (r: Result<void, void>) => {
-				throw new ExitError(r.tag === 'err' ? 1 : 0);
-			}
-		},
-		"wasi:cli/stderr": {
-			getStderr: () => errStream,
-		},
-		"wasi:cli/stdin": wasip2.cli.stdin,
-		"wasi:cli/stdout": {
-			getStdout: () => outStream,
-		},
-		"wasi:cli/terminal-input": wasip2.cli.terminalInput,
-		"wasi:cli/terminal-output": wasip2.cli.terminalOutput,
-		"wasi:cli/terminal-stderr": wasip2.cli.terminalStderr,
-		"wasi:cli/terminal-stdin": wasip2.cli.terminalStdin,
-		"wasi:cli/terminal-stdout": wasip2.cli.terminalStdout,
-		"wasi:clocks/monotonic-clock": wasip2.clocks.monotonicClock,
-		"wasi:clocks/wall-clock": wasip2.clocks.wallClock,
-		"wasi:filesystem/preopens": {
-			getDirectories: () => preopens,
-		},
-		"wasi:filesystem/types": wasip2.filesystem.types,
-		"wasi:io/error": wasip2.io.error,
-		"wasi:io/poll": wasip2.io.poll,
-		"wasi:io/streams": wasip2.io.streams,
-		"wasi:random/random": wasip2.random.random,
-		"wasi:sockets/network": wasip2.sockets.network,
-		"wasi:sockets/tcp": wasip2.sockets.tcp,
-		"wasi:sockets/udp": wasip2.sockets.udp,
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	} as any);
+	const { run } = await instantiate(
+		url =>
+			fetch(new URL(`./assets/openssl-wasi/${url}`, import.meta.url)).then(
+				WebAssembly.compileStreaming,
+			),
+		{
+			'wasi:cli/environment': {
+				getArguments: () => args,
+				getEnvironment: () => [['OPENSSL_CONF', '/openssl.cnf']],
+			},
+			'wasi:cli/exit': {
+				exit: (r: Result<void, void>) => {
+					throw new ExitError(r.tag === 'err' ? 1 : 0);
+				},
+			},
+			'wasi:cli/stderr': {
+				getStderr: () => errStream,
+			},
+			'wasi:cli/stdin': wasip2.cli.stdin,
+			'wasi:cli/stdout': {
+				getStdout: () => outStream,
+			},
+			'wasi:cli/terminal-input': wasip2.cli.terminalInput,
+			'wasi:cli/terminal-output': wasip2.cli.terminalOutput,
+			'wasi:cli/terminal-stderr': wasip2.cli.terminalStderr,
+			'wasi:cli/terminal-stdin': wasip2.cli.terminalStdin,
+			'wasi:cli/terminal-stdout': wasip2.cli.terminalStdout,
+			'wasi:clocks/monotonic-clock': wasip2.clocks.monotonicClock,
+			'wasi:clocks/wall-clock': wasip2.clocks.wallClock,
+			'wasi:filesystem/preopens': {
+				getDirectories: () => preopens,
+			},
+			'wasi:filesystem/types': wasip2.filesystem.types,
+			'wasi:io/error': wasip2.io.error,
+			'wasi:io/poll': wasip2.io.poll,
+			'wasi:io/streams': wasip2.io.streams,
+			'wasi:random/random': wasip2.random.random,
+			'wasi:sockets/network': wasip2.sockets.network,
+			'wasi:sockets/tcp': wasip2.sockets.tcp,
+			'wasi:sockets/udp': wasip2.sockets.udp,
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		} as any,
+	);
 	let exitCode = 0;
 	try {
 		run.run();
@@ -132,9 +140,11 @@ export async function execute(
 		) {
 			continue;
 		}
-		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-		// @ts-expect-error
-		const [contents] = preopens[0][0].openAt({}, file.name, {}, { read: true }).read(10000000, 0);
+		const [contents] = preopens[0][0]
+			.openAt({}, file.name, {}, { read: true })
+			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+			// @ts-expect-error
+			.read(10000000, 0);
 		if (contents.length === 0) {
 			continue;
 		}

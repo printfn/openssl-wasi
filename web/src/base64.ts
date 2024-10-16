@@ -1,0 +1,34 @@
+export async function toBase64(
+	bytes: BufferSource | Blob | string | null | undefined,
+) {
+	if (bytes === null || bytes === undefined) {
+		return '';
+	}
+	const dataUrl = await new Promise<string>((resolve, reject) => {
+		const reader = Object.assign(new FileReader(), {
+			onload: () => resolve(reader.result as string),
+			onerror: () => reject(reader.error),
+		});
+		reader.readAsDataURL(
+			new File([bytes], '', { type: 'application/octet-stream' }),
+		);
+	});
+	const prefix = 'data:application/octet-stream;base64,';
+	if (!dataUrl.startsWith(prefix)) {
+		throw new Error(`invalid data URL: ${dataUrl}`);
+	}
+	return dataUrl.substring(prefix.length);
+}
+
+export async function parseBase64(base64: string | null | undefined) {
+	try {
+		if (!base64) {
+			return new Uint8Array();
+		}
+		const res = await fetch(`data:application/octet-stream;base64,${base64}`);
+		return await res.arrayBuffer();
+	} catch (e) {
+		console.error(`${base64} is not valid base64:`, e);
+		throw new Error('invalid base64 data');
+	}
+}
