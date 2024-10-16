@@ -143,7 +143,7 @@ function useAppState() {
 		},
 		[setSearchParams],
 	);
-	const [file, setFileState] = useState<ArrayBuffer>(new Uint8Array().buffer);
+	const [file, setFileState] = useState<ArrayBuffer>(new Uint8Array());
 	useEffect(() => {
 		(async () => {
 			setFileState(await parseBase64(searchParams.get('file') ?? ''));
@@ -217,7 +217,7 @@ function App() {
 			}
 
 			(async () => {
-				setFile(new Uint8Array(await files[0].arrayBuffer()));
+				setFile(await files[0].arrayBuffer());
 			})();
 		},
 		[setFile],
