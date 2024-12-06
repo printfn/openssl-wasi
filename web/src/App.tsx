@@ -1,4 +1,11 @@
-import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import {
+	ReactNode,
+	useCallback,
+	useEffect,
+	useMemo,
+	useState,
+	startTransition,
+} from 'react';
 import { type OpenSSLResult, execute } from './openssl';
 import { Button, Container, Form } from 'react-bootstrap';
 import './main.css';
@@ -86,9 +93,9 @@ function DisplayFile({
 }): ReactNode {
 	const [base64File, setBase64File] = useState('');
 	useEffect(() => {
-		(async () => {
+		startTransition(async () => {
 			setBase64File(await toBase64(contents));
-		})();
+		});
 	}, [contents]);
 
 	const elem = isBinary(contents) ? (
@@ -132,7 +139,7 @@ type AppState = {
 function useAppState() {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const setField = useCallback(
-		<K extends keyof AppState>(key: K, value: string) => {
+		(key: keyof AppState, value: string) => {
 			setSearchParams(
 				prev => {
 					prev.set(key, value.toString());
@@ -143,18 +150,18 @@ function useAppState() {
 		},
 		[setSearchParams],
 	);
-	const [file, setFileState] = useState<ArrayBuffer>(new Uint8Array());
+	const [file, setFileState] = useState<Uint8Array>(new Uint8Array());
 	useEffect(() => {
-		(async () => {
+		startTransition(async () => {
 			setFileState(await parseBase64(searchParams.get('file') ?? ''));
-		})();
+		});
 	}, [searchParams]);
 	const command = useMemo(
 		() => searchParams.get('command') ?? getCommand('cert', true),
 		[searchParams],
 	);
 	const setFile = useCallback(
-		async (file: ArrayBuffer | (() => Promise<ArrayBuffer>)) => {
+		async (file: Uint8Array | (() => Promise<Uint8Array>)) => {
 			if (typeof file === 'function') {
 				file = await file();
 			}
@@ -197,10 +204,10 @@ function App() {
 	}, [command]);
 
 	const executeCommand = useCallback(() => {
-		(async () => {
+		startTransition(async () => {
 			const result = await execute(command, file);
 			setResult(result);
-		})();
+		});
 	}, [file, command]);
 
 	useEffect(() => {
@@ -211,23 +218,23 @@ function App() {
 
 	const decodeFile = useCallback(
 		(files: FileList | null) => {
-			if (!files?.[0]) {
-				setFile(new Uint8Array());
-				return;
-			}
+			startTransition(async () => {
+				if (!files?.[0]) {
+					await setFile(new Uint8Array());
+					return;
+				}
 
-			(async () => {
-				setFile(await files[0].arrayBuffer());
-			})();
+				await setFile(new Uint8Array(await files[0].arrayBuffer()));
+			});
 		},
 		[setFile],
 	);
 
 	const [base64File, setBase64File] = useState('');
 	useEffect(() => {
-		(async () => {
+		startTransition(async () => {
 			setBase64File(await toBase64(file));
-		})();
+		});
 	}, [file]);
 
 	return (
@@ -236,11 +243,13 @@ function App() {
 			<p>
 				<textarea
 					style={{ width: '100%', height: '10rem', fontFamily: 'monospace' }}
-					onChange={async e => {
-						setFile(async () =>
-							der
-								? await parseBase64(e.currentTarget.value)
-								: new TextEncoder().encode(e.currentTarget.value),
+					onChange={e => {
+						startTransition(async () =>
+							setFile(async () =>
+								der
+									? await parseBase64(e.currentTarget.value)
+									: new TextEncoder().encode(e.currentTarget.value),
+							),
 						);
 					}}
 					value={
@@ -334,7 +343,7 @@ function App() {
 			{result.files && result.files.length > 0 && (
 				<div className="mb-3">
 					<h4>Output File{result.files.length === 1 ? '' : 's'}:</h4>
-					{result.files?.map(file => (
+					{result.files.map(file => (
 						<div key={file.name}>
 							<DisplayFile contents={file.contents} name={file.name} />
 						</div>

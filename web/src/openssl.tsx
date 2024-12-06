@@ -14,16 +14,17 @@ export type OpenSSLResult = {
 
 const textDecoder = new TextDecoder();
 
-class ExitError {
+class ExitError extends Error {
 	statusCode: number;
 	constructor(statusCode: number) {
+		super('exit error');
 		this.statusCode = statusCode;
 	}
 }
 
 export async function execute(
 	cmd: string,
-	file: ArrayBuffer,
+	file: Uint8Array,
 ): Promise<OpenSSLResult> {
 	const parsed = parse(cmd);
 	const args: string[] = [];
@@ -132,9 +133,8 @@ export async function execute(
 	const files: File[] = [];
 	const directory = preopens[0][0].readDirectory();
 	for (let file = null; (file = directory.readDirectoryEntry()); ) {
-		console.log(file);
 		if (
-			!file?.name ||
+			!file.name ||
 			file.name === 'input_file' ||
 			file.name === 'openssl.cnf'
 		) {
