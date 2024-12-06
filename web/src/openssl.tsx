@@ -76,11 +76,15 @@ export async function execute(
 		blockingFlush() {},
 		[Symbol.dispose]() {},
 	});
+	// eslint-disable-next-line @typescript-eslint/await-thenable
 	const { run } = await instantiate(
-		url =>
-			fetch(new URL(`./assets/openssl-wasi/${url}`, import.meta.url)).then(
-				WebAssembly.compileStreaming,
-			),
+		async url => {
+			const response = await fetch(
+				new URL(`./assets/openssl-wasi/${url}`, import.meta.url),
+			);
+			return await WebAssembly.compileStreaming(response);
+		},
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 		{
 			'wasi:cli/environment': {
 				getArguments: () => args,

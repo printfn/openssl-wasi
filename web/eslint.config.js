@@ -16,7 +16,7 @@ export default tseslint.config(
 	js.configs.recommended,
 	...tseslint.configs.strictTypeChecked,
 	reactRefresh.configs.vite,
-	{ ignores: ['dist', 'eslint.config.js'] },
+	{ ignores: ['dist', 'src/assets', 'eslint.config.js'] },
 	{
 		files: ['**/*.{ts,tsx}'],
 	},
