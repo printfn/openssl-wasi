@@ -6,8 +6,9 @@ const ReactCompilerConfig = {};
 export default defineConfig({
 	base: '/openssl-wasi/',
 	build: {
-		target: 'esnext',
+		minify: false,
 		sourcemap: true,
+		target: 'esnext',
 	},
 	plugins: [
 		react({
