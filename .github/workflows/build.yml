@@ -35,6 +35,7 @@ jobs:
           (cd openssl && make -j$(nproc))
           (cd web && npm ci)
           (cd web && npm exec -- jco transpile ../openssl/apps/openssl -o ./src/assets/openssl-wasi --no-nodejs-compat --instantiation async --multi-memory)
+          (cd web && npm run lint)
           (cd web && npm run build)
 
       - name: Upload GitHub Pages artifact
