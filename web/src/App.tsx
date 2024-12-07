@@ -6,7 +6,7 @@ import {
 	useState,
 	startTransition,
 } from 'react';
-import { type OpenSSLResult, execute } from './openssl';
+import { type File, type OpenSSLResult, execute } from './openssl';
 import { Button, Container, Form } from 'react-bootstrap';
 import './main.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
@@ -84,21 +84,8 @@ function isBinary(file: Uint8Array) {
 	return false;
 }
 
-function DisplayFile({
-	contents,
-	name,
-}: {
-	contents: Uint8Array;
-	name: string;
-}): ReactNode {
-	const [base64File, setBase64File] = useState('');
-	useEffect(() => {
-		startTransition(async () => {
-			setBase64File(await toBase64(contents));
-		});
-	}, [contents]);
-
-	const elem = isBinary(contents) ? (
+function DisplayFile({ file }: { file: File }): ReactNode {
+	const elem = isBinary(file.contents) ? (
 		<>
 			<span style={{ fontStyle: 'italic' }}>
 				This file contains non-printable characters.
@@ -107,23 +94,24 @@ function DisplayFile({
 				<br />
 				<br />
 			</span>
-			{addLineBreaks(base64File)}
+			{addLineBreaks(file.base64)}
 		</>
 	) : (
-		new TextDecoder().decode(contents)
+		new TextDecoder().decode(file.contents)
 	);
+
+	const fileLength = `${file.contents.length.toLocaleString()} bytes`;
 
 	return (
 		<>
 			<pre>{elem}</pre>
 			<div className="mb-3">
 				<a
-					href={`data:application/octet-stream;base64,${base64File}`}
-					download={name}
+					href={`data:application/octet-stream;base64,${file.base64}`}
+					download={file.name}
 				>
 					<Button variant="secondary">
-						<i className="fa-solid fa-download" /> {name} ({contents.length}{' '}
-						bytes)
+						<i className="fa-solid fa-download" /> {file.name} ({fileLength})
 					</Button>
 				</a>
 			</div>
@@ -345,7 +333,7 @@ function App() {
 					<h4>Output File{result.files.length === 1 ? '' : 's'}:</h4>
 					{result.files.map(file => (
 						<div key={file.name}>
-							<DisplayFile contents={file.contents} name={file.name} />
+							<DisplayFile file={file} />
 						</div>
 					))}
 				</div>

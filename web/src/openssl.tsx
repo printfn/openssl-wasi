@@ -4,8 +4,9 @@ import { instantiate } from './assets/openssl-wasi/openssl';
 import * as wasip2 from '@bytecodealliance/preview2-shim';
 import { Descriptor } from '@bytecodealliance/preview2-shim/interfaces/wasi-filesystem-types';
 import { Result } from '@bytecodealliance/preview2-shim/interfaces/wasi-cli-exit';
+import { toBase64 } from './base64';
 
-type File = { name: string; contents: Uint8Array };
+export type File = { name: string; contents: Uint8Array; base64: string };
 
 export type OpenSSLResult = {
 	output: ReactElement;
@@ -155,6 +156,7 @@ export async function execute(
 		files.push({
 			name: file.name,
 			contents,
+			base64: await toBase64(contents),
 		});
 	}
 	files.sort((a, b) => a.name.localeCompare(b.name));
