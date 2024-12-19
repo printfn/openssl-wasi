@@ -36,6 +36,7 @@ export default tseslint.config(
 			...reactHooksRules,
 			'react-compiler/react-compiler': 'error',
 			'@typescript-eslint/promise-function-async': 'error',
+			'@typescript-eslint/consistent-type-imports': 'error',
 		},
 	},
 );

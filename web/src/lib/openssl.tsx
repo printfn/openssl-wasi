@@ -1,9 +1,9 @@
 import { parse } from 'shell-quote';
-import { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { instantiate } from '../assets/openssl-wasi/openssl';
 import * as wasip2 from '@bytecodealliance/preview2-shim';
-import { Descriptor } from '@bytecodealliance/preview2-shim/interfaces/wasi-filesystem-types';
-import { Result } from '@bytecodealliance/preview2-shim/interfaces/wasi-cli-exit';
+import type { Descriptor } from '@bytecodealliance/preview2-shim/interfaces/wasi-filesystem-types';
+import type { Result } from '@bytecodealliance/preview2-shim/interfaces/wasi-cli-exit';
 import { toBase64 } from './base64';
 import { toHex } from './hex';
 

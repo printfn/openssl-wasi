@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { addLineBreaks } from '../lib/utils';
-import { File } from '../lib/openssl';
+import type { File } from '../lib/openssl';
 import { Button, Tab, Tabs } from 'react-bootstrap';
 
 function isBinary(file: Uint8Array) {
