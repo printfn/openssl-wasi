@@ -1,7 +1,7 @@
-import type { ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { addLineBreaks } from '../lib/utils';
 import { File } from '../lib/openssl';
-import { Button } from 'react-bootstrap';
+import { Button, Tab, Tabs } from 'react-bootstrap';
 
 function isBinary(file: Uint8Array) {
 	for (let i = 0; i < file.length; ++i) {
@@ -16,26 +16,31 @@ function isBinary(file: Uint8Array) {
 }
 
 export default function DisplayFile({ file }: { file: File }): ReactNode {
-	const elem = isBinary(file.contents) ? (
-		<>
-			<span style={{ fontStyle: 'italic' }}>
-				This file contains non-printable characters.
-				<br />
-				Rendering as base64:
-				<br />
-				<br />
-			</span>
-			{addLineBreaks(file.base64)}
-		</>
-	) : (
-		new TextDecoder().decode(file.contents)
-	);
+	const binary = useMemo(() => isBinary(file.contents), [file.contents]);
+	const [activeKey, setActiveKey] = useState('utf8');
+	useEffect(() => {
+		if (activeKey === 'utf8' && binary) {
+			setActiveKey('base64');
+		}
+	}, [activeKey, binary]);
 
 	const fileLength = `${file.contents.length.toLocaleString()} bytes`;
 
 	return (
 		<div>
-			<pre>{elem}</pre>
+			<Tabs
+				activeKey={activeKey}
+				onSelect={e => {
+					setActiveKey(e ?? 'utf8');
+				}}
+			>
+				<Tab eventKey="utf8" title="UTF-8" disabled={binary}>
+					<pre>{new TextDecoder().decode(file.contents)}</pre>
+				</Tab>
+				<Tab eventKey="base64" title="Base64">
+					<pre>{addLineBreaks(file.base64)}</pre>
+				</Tab>
+			</Tabs>
 			<div className="mb-3">
 				<a
 					href={`data:application/octet-stream;base64,${file.base64}`}
