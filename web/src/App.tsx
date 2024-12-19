@@ -1,19 +1,20 @@
 import {
-	ReactNode,
 	useCallback,
 	useEffect,
 	useMemo,
 	useState,
 	startTransition,
 } from 'react';
-import { type File, type OpenSSLResult, execute } from './openssl';
+import { type OpenSSLResult, execute } from './lib/openssl';
 import { Button, Container, Form } from 'react-bootstrap';
 import './main.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import '@fortawesome/fontawesome-free/css/svg-with-js.css';
 import { useSearchParams } from 'react-router';
 import { parseBase64, toBase64 } from './base64';
-import { SafeTextArea } from './SafeTextArea';
+import { SafeTextArea } from './components/SafeTextArea';
+import { addLineBreaks } from './lib/utils';
+import DisplayFile from './components/DisplayFile';
 
 const FileTypes = [
 	'cert',
@@ -67,57 +68,6 @@ function getCommand(fileType: FileType, pem: boolean) {
 		default:
 			throw new Error('unknown file type');
 	}
-}
-
-function addLineBreaks(s: string) {
-	return s.replace(/(.{64})/g, '$1\n');
-}
-
-function isBinary(file: Uint8Array) {
-	for (let i = 0; i < file.length; ++i) {
-		if (file[i] === 10 || file[i] === 13 || file[i] === 9) {
-			continue;
-		}
-		if (file[i] <= 31 || file[i] >= 127) {
-			return true;
-		}
-	}
-	return false;
-}
-
-function DisplayFile({ file }: { file: File }): ReactNode {
-	const elem = isBinary(file.contents) ? (
-		<>
-			<span style={{ fontStyle: 'italic' }}>
-				This file contains non-printable characters.
-				<br />
-				Rendering as base64:
-				<br />
-				<br />
-			</span>
-			{addLineBreaks(file.base64)}
-		</>
-	) : (
-		new TextDecoder().decode(file.contents)
-	);
-
-	const fileLength = `${file.contents.length.toLocaleString()} bytes`;
-
-	return (
-		<>
-			<pre>{elem}</pre>
-			<div className="mb-3">
-				<a
-					href={`data:application/octet-stream;base64,${file.base64}`}
-					download={file.name}
-				>
-					<Button variant="secondary">
-						<i className="fa-solid fa-download" /> {file.name} ({fileLength})
-					</Button>
-				</a>
-			</div>
-		</>
-	);
 }
 
 type AppState = {

@@ -1,10 +1,10 @@
 import { parse } from 'shell-quote';
 import { ReactElement } from 'react';
-import { instantiate } from './assets/openssl-wasi/openssl';
+import { instantiate } from '../assets/openssl-wasi/openssl';
 import * as wasip2 from '@bytecodealliance/preview2-shim';
 import { Descriptor } from '@bytecodealliance/preview2-shim/interfaces/wasi-filesystem-types';
 import { Result } from '@bytecodealliance/preview2-shim/interfaces/wasi-cli-exit';
-import { toBase64 } from './base64';
+import { toBase64 } from '../base64';
 
 export type File = { name: string; contents: Uint8Array; base64: string };
 
@@ -81,7 +81,7 @@ export async function execute(
 	const { run } = await instantiate(
 		async url => {
 			const response = await fetch(
-				new URL(`./assets/openssl-wasi/${url}`, import.meta.url),
+				new URL(`../assets/openssl-wasi/${url}`, import.meta.url),
 			);
 			return await WebAssembly.compileStreaming(response);
 		},
