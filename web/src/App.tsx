@@ -11,7 +11,7 @@ import './main.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import '@fortawesome/fontawesome-free/css/svg-with-js.css';
 import { useSearchParams } from 'react-router';
-import { parseBase64, toBase64 } from './base64';
+import { parseBase64, toBase64 } from './lib/base64';
 import { SafeTextArea } from './components/SafeTextArea';
 import { addLineBreaks } from './lib/utils';
 import DisplayFile from './components/DisplayFile';

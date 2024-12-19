@@ -4,9 +4,15 @@ import { instantiate } from '../assets/openssl-wasi/openssl';
 import * as wasip2 from '@bytecodealliance/preview2-shim';
 import { Descriptor } from '@bytecodealliance/preview2-shim/interfaces/wasi-filesystem-types';
 import { Result } from '@bytecodealliance/preview2-shim/interfaces/wasi-cli-exit';
-import { toBase64 } from '../base64';
+import { toBase64 } from './base64';
+import { toHex } from './hex';
 
-export type File = { name: string; contents: Uint8Array; base64: string };
+export type File = {
+	name: string;
+	contents: Uint8Array;
+	base64: string;
+	hex: string;
+};
 
 export type OpenSSLResult = {
 	output: ReactElement;
@@ -157,6 +163,7 @@ export async function execute(
 			name: file.name,
 			contents,
 			base64: await toBase64(contents),
+			hex: toHex(contents),
 		});
 	}
 	files.sort((a, b) => a.name.localeCompare(b.name));

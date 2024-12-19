@@ -40,6 +40,9 @@ export default function DisplayFile({ file }: { file: File }): ReactNode {
 				<Tab eventKey="base64" title="Base64">
 					<pre>{addLineBreaks(file.base64)}</pre>
 				</Tab>
+				<Tab eventKey="hex" title="Hex">
+					<pre>{addLineBreaks(file.hex)}</pre>
+				</Tab>
 			</Tabs>
 			<div className="mb-3">
 				<a
