@@ -19,24 +19,7 @@ jobs:
         with:
           submodules: true
 
-      - run: |
-          export WASI_VERSION=24
-          export WASI_VERSION_FULL=${WASI_VERSION}.0
-          wget https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_VERSION}/wasi-sdk-${WASI_VERSION_FULL}-x86_64-linux.tar.gz
-          tar xvf wasi-sdk-${WASI_VERSION_FULL}-x86_64-linux.tar.gz
-          export WASI_SDK_PATH=$(pwd)/wasi-sdk-${WASI_VERSION_FULL}-x86_64-linux
-
-          export CC="${WASI_SDK_PATH}/bin/clang --sysroot=${WASI_SDK_PATH}/share/wasi-sysroot"
-          export AR="${WASI_SDK_PATH}/bin/llvm-ar"
-          export RANLIB="${WASI_SDK_PATH}/bin/llvm-ranlib"
-
-          patch -d openssl -p1 <openssl.patch
-          (cd openssl && ./Configure wasm32-wasip2 no-dgram no-quic no-tests no-ui-console no-sock no-posix-io)
-          (cd openssl && make -j$(nproc))
-          (cd web && npm ci)
-          (cd web && npm exec -- jco transpile ../openssl/apps/openssl -o ./src/assets/openssl-wasi --no-nodejs-compat --instantiation async --multi-memory)
-          (cd web && npm run lint)
-          (cd web && npm run build)
+      - run: ./build.sh
 
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v3
