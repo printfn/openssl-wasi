@@ -13,6 +13,7 @@ import '@fortawesome/fontawesome-free/css/all.min.css';
 import '@fortawesome/fontawesome-free/css/svg-with-js.css';
 import { useSearchParams } from 'react-router';
 import { parseBase64, toBase64 } from './base64';
+import { SafeTextArea } from './SafeTextArea';
 
 const FileTypes = [
 	'cert',
@@ -229,7 +230,7 @@ function App() {
 		<Container>
 			<h1>OpenSSL-WASI</h1>
 			<p>
-				<textarea
+				<SafeTextArea
 					style={{ width: '100%', height: '10rem', fontFamily: 'monospace' }}
 					onChange={e => {
 						startTransition(async () =>
@@ -300,7 +301,7 @@ function App() {
 				</select>
 			</p>
 			<p>
-				<textarea
+				<SafeTextArea
 					style={{ width: '100%', fontFamily: 'monospace' }}
 					value={command}
 					onChange={e => {
