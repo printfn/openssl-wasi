@@ -1,8 +1,9 @@
-export async function toBase64(
-	bytes: BufferSource | Blob | string | null | undefined,
-) {
+export async function toBase64(bytes: Uint8Array | null | undefined) {
 	if (bytes === null || bytes === undefined) {
 		return '';
+	}
+	if (bytes.toBase64) {
+		return bytes.toBase64();
 	}
 	const dataUrl = await new Promise<string>((resolve, reject) => {
 		const reader = Object.assign(new FileReader(), {
