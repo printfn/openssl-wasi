@@ -10,7 +10,14 @@ export function toBase64(bytes: Uint8Array | null | undefined) {
 	);
 }
 
-export function parseBase64(base64: string | null | undefined) {
+export function toBase64Url(bytes: Uint8Array | null | undefined) {
+	return toBase64(bytes)
+		.replaceAll('+', '-')
+		.replaceAll('/', '_')
+		.replaceAll('=', '');
+}
+
+export function fromBase64(base64: string | null | undefined) {
 	try {
 		if (!base64) {
 			return new Uint8Array();
@@ -20,4 +27,15 @@ export function parseBase64(base64: string | null | undefined) {
 		console.error(`${base64 as string} is not valid base64:`, e);
 		throw new Error('invalid base64 data');
 	}
+}
+
+export function fromBase64Url(base64url: string | null | undefined) {
+	if (!base64url) {
+		return new Uint8Array();
+	}
+	let base64 = base64url.replaceAll('-', '+').replaceAll('_', '/');
+	while (base64.length % 4 !== 0) {
+		base64 += '=';
+	}
+	return fromBase64(base64);
 }

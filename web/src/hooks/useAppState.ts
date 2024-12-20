@@ -1,19 +1,55 @@
 import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router';
-import { parseBase64, toBase64 } from '../lib/base64';
+import { fromBase64Url, toBase64Url } from '../lib/base64';
 
 export type AppState = {
-	file: Uint8Array;
+	files: { [name: string]: Uint8Array };
 	command: string;
 };
 
-export function useAppState(defaultCommand: string) {
+function encodeState(state: AppState) {
+	return toBase64Url(
+		new TextEncoder().encode(
+			JSON.stringify({
+				files: Object.fromEntries(
+					Object.entries(state.files).map(([k, v]) => [k, toBase64Url(v)]),
+				),
+				command: state.command,
+			}),
+		),
+	);
+}
+
+function decodeState(value: string | null): AppState {
+	if (!value) {
+		return {
+			command: 'openssl x509 -in input_file -inform PEM -text -noout',
+			files: { input_file: new Uint8Array() },
+		};
+	}
+	type JsonState = { command: string; files: { [name: string]: string } };
+	const jsonState = JSON.parse(
+		new TextDecoder().decode(fromBase64Url(value)),
+	) as JsonState;
+	return {
+		command: jsonState.command,
+		files: Object.fromEntries(
+			Object.entries(jsonState.files).map(([k, v]) => [k, fromBase64Url(v)]),
+		),
+	};
+}
+
+export function useAppState() {
 	const [searchParams, setSearchParams] = useSearchParams();
-	const setField = useCallback(
-		(key: keyof AppState, value: string) => {
+	const state = useMemo(
+		() => decodeState(searchParams.get('state')),
+		[searchParams],
+	);
+	const setState = useCallback(
+		(value: AppState) => {
 			setSearchParams(
 				prev => {
-					prev.set(key, value.toString());
+					prev.set('state', encodeState(value));
 					return prev;
 				},
 				{ replace: true },
@@ -21,25 +57,5 @@ export function useAppState(defaultCommand: string) {
 		},
 		[setSearchParams],
 	);
-	const file = useMemo(
-		() => parseBase64(searchParams.get('file') ?? ''),
-		[searchParams],
-	);
-	const command = useMemo(
-		() => searchParams.get('command') ?? defaultCommand,
-		[searchParams, defaultCommand],
-	);
-	const setFile = useCallback(
-		(file: Uint8Array) => {
-			setField('file', toBase64(file));
-		},
-		[setField],
-	);
-	const setCommand = useCallback(
-		(command: string) => {
-			setField('command', command);
-		},
-		[setField],
-	);
-	return { file, setFile, command, setCommand };
+	return { state, setState };
 }

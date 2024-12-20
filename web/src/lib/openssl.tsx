@@ -8,6 +8,8 @@ import { toBase64 } from './base64';
 import { toHex } from './hex';
 import { AsyncLock } from './async-lock';
 
+type InputFiles = { [name: string]: Uint8Array };
+
 export type File = {
 	name: string;
 	contents: Uint8Array;
@@ -32,7 +34,7 @@ class ExitError extends Error {
 
 async function executeInternal(
 	cmd: string,
-	file: Uint8Array,
+	inputFiles: InputFiles,
 ): Promise<OpenSSLResult> {
 	const parsed = parse(cmd);
 	const args: string[] = [];
@@ -59,11 +61,13 @@ async function executeInternal(
 		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 		// @ts-expect-error
 		.write(new Uint8Array([]), 0);
-	preopens[0][0]
-		.openAt({}, 'input_file', { create: true }, { write: true })
-		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-		// @ts-expect-error
-		.write(new Uint8Array(file), 0);
+	for (const [name, contents] of Object.entries(inputFiles)) {
+		preopens[0][0]
+			.openAt({}, name, { create: true }, { write: true })
+			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+			// @ts-expect-error
+			.write(new Uint8Array(contents), 0);
+	}
 	let stdout = '';
 	let stderr = '';
 	// eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -142,7 +146,7 @@ async function executeInternal(
 		}
 	}
 
-	const files: File[] = [];
+	const outputFiles: File[] = [];
 	const directory = preopens[0][0].readDirectory();
 	for (let file = null; (file = directory.readDirectoryEntry()); ) {
 		if (
@@ -160,14 +164,14 @@ async function executeInternal(
 		if (contents.length === 0) {
 			continue;
 		}
-		files.push({
+		outputFiles.push({
 			name: file.name,
 			contents,
 			base64: toBase64(contents),
 			hex: toHex(contents),
 		});
 	}
-	files.sort((a, b) => a.name.localeCompare(b.name));
+	outputFiles.sort((a, b) => a.name.localeCompare(b.name));
 
 	const noOutput = stderr.trim().length === 0 && stdout.trim().length === 0;
 
@@ -192,29 +196,46 @@ async function executeInternal(
 		</>
 	);
 
-	return { output, files };
+	return { output, files: outputFiles };
 }
 
 const lock = new AsyncLock();
-let cache: { cmd: string; file: Uint8Array; result: OpenSSLResult } | undefined;
+let cache:
+	| { cmd: string; files: InputFiles; result: OpenSSLResult }
+	| undefined;
+function compareCache(cmd: string, files: InputFiles) {
+	if (!cache || cache.cmd !== cmd) {
+		return false;
+	}
+	const cacheKeys = Object.keys(cache.files);
+	const argKeys = Object.keys(files);
+	if (cacheKeys.length !== argKeys.length) {
+		return false;
+	}
+	for (const k of argKeys) {
+		if (files[k].length !== cache.files[k].length) {
+			return false;
+		}
+		if (!files[k].every((n, i) => cache?.files[k][i] === n)) {
+			return false;
+		}
+	}
+	return true;
+}
 
 export async function execute(
 	cmd: string,
-	file: Uint8Array,
+	files: InputFiles,
 ): Promise<OpenSSLResult> {
 	const release = await lock.acquire();
 	try {
-		if (
-			cache?.cmd === cmd &&
-			cache.file.length === file.length &&
-			cache.file.every((n, i) => file[i] === n)
-		) {
-			console.log('using cache');
+		if (cache && compareCache(cmd, files)) {
+			console.log('using cache', cache);
 			return cache.result;
 		}
 		console.log('recalculating, cache:', cache, cmd);
-		const result = await executeInternal(cmd, file);
-		cache = { cmd, file, result };
+		const result = await executeInternal(cmd, files);
+		cache = { cmd, files, result };
 		return result;
 	} finally {
 		release();

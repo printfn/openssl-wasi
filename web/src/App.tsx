@@ -70,9 +70,10 @@ function getCommand(fileType: FileType, pem: boolean) {
 }
 
 function App() {
-	const { command, file, setCommand, setFile } = useAppState(
-		getCommand('cert', true),
-	);
+	const {
+		state: { command, files },
+		setState,
+	} = useAppState();
 
 	const [result, setResult] = useState<OpenSSLResult>({ output: <></> });
 	const [autoExecute, setAutoExecute] = useState(true);
@@ -98,10 +99,10 @@ function App() {
 
 	const executeCommand = useCallback(() => {
 		startTransition(async () => {
-			const result = await execute(command, file);
+			const result = await execute(command, files);
 			setResult(result);
 		});
-	}, [file, command]);
+	}, [files, command]);
 
 	useEffect(() => {
 		if (autoExecute) {
@@ -109,10 +110,25 @@ function App() {
 		}
 	}, [autoExecute, executeCommand]);
 
+	const setCommand = useCallback(
+		(value: string) => {
+			setState({
+				command: value,
+				files,
+			});
+		},
+		[setState, files],
+	);
+
 	return (
 		<Container>
 			<h1>OpenSSL-WASI</h1>
-			<InputFile file={file} setFile={setFile} />
+			<InputFile
+				file={files['input_file']}
+				setFile={value => {
+					setState({ command, files: { ...files, input_file: value } });
+				}}
+			/>
 			<div className="mb-2">
 				<select
 					disabled={pem === undefined}

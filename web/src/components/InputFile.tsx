@@ -5,7 +5,7 @@ import {
 	useMemo,
 	useState,
 } from 'react';
-import { parseBase64, toBase64 } from '../lib/base64';
+import { fromBase64, toBase64 } from '../lib/base64';
 import { SafeTextArea } from './SafeTextArea';
 import { addLineBreaks, isBinary } from '../lib/utils';
 import { Tab, Tabs } from 'react-bootstrap';
@@ -56,7 +56,7 @@ export default function InputFile({ file, setFile }: Props) {
 					<SafeTextArea
 						style={{ width: '100%', height: '10rem', fontFamily: 'monospace' }}
 						onChange={e => {
-							setFile(parseBase64(e.currentTarget.value));
+							setFile(fromBase64(e.currentTarget.value));
 						}}
 						value={addLineBreaks(toBase64(file))}
 					/>
