@@ -1,6 +1,8 @@
 import { startTransition, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { fromBase64Url, toBase64Url } from '../lib/base64';
+import { encode as cborEncode } from 'cbor2/encoder';
+import { decode as cborDecode } from 'cbor2/decoder';
 
 export type AppState = {
 	files: Map<string, Uint8Array>;
@@ -22,13 +24,11 @@ async function decompress(data: Uint8Array) {
 }
 
 async function encodeState(state: AppState) {
-	const jsonEncoded = JSON.stringify({
+	const cborEncoded = cborEncode({
 		c: state.command,
-		f: Object.fromEntries(
-			state.files.entries().map(([k, v]) => [k, toBase64Url(v)]),
-		),
+		f: Object.fromEntries(state.files.entries()),
 	});
-	return toBase64Url(await compress(new TextEncoder().encode(jsonEncoded)));
+	return toBase64Url(await compress(cborEncoded));
 }
 
 const defaultState: AppState = {
@@ -40,16 +40,19 @@ async function decodeState(value: string | null): Promise<AppState> {
 	if (!value) {
 		return defaultState;
 	}
-	type JsonState = { c: string; f: { [name: string]: string } };
-	const jsonState = JSON.parse(
-		new TextDecoder().decode(await decompress(fromBase64Url(value))),
-	) as JsonState;
-	return {
-		command: jsonState.c,
-		files: new Map(
-			Object.entries(jsonState.f).map(([k, v]) => [k, fromBase64Url(v)]),
-		),
-	};
+	try {
+		type CborState = { c: string; f: { [name: string]: Uint8Array } };
+		const cborState = cborDecode<CborState>(
+			await decompress(fromBase64Url(value)),
+		);
+		return {
+			command: cborState.c,
+			files: new Map(Object.entries(cborState.f)),
+		};
+	} catch (e) {
+		console.error('failed to decode state', e);
+		return defaultState;
+	}
 }
 
 export function useAppState() {
