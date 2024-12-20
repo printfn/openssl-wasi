@@ -231,10 +231,11 @@ function compareCache(cmd: string, files: InputFiles) {
 export async function execute(
 	cmd: string,
 	files: InputFiles,
+	options: { force: boolean },
 ): Promise<OpenSSLResult> {
 	const release = await lock.acquire();
 	try {
-		if (cache && compareCache(cmd, files)) {
+		if (!options.force && cache && compareCache(cmd, files)) {
 			console.log('using cache', cache);
 			return cache.result;
 		}

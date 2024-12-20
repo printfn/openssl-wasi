@@ -97,16 +97,19 @@ function App() {
 		return undefined;
 	}, [command]);
 
-	const executeCommand = useCallback(() => {
-		startTransition(async () => {
-			const result = await execute(command, files);
-			setResult(result);
-		});
-	}, [files, command]);
+	const executeCommand = useCallback(
+		({ force }: { force: boolean }) => {
+			startTransition(async () => {
+				const result = await execute(command, files, { force });
+				setResult(result);
+			});
+		},
+		[files, command],
+	);
 
 	useEffect(() => {
 		if (autoExecute) {
-			executeCommand();
+			executeCommand({ force: false });
 		}
 	}, [autoExecute, executeCommand]);
 
@@ -199,7 +202,7 @@ function App() {
 					variant="primary"
 					disabled={autoExecute}
 					onClick={() => {
-						executeCommand();
+						executeCommand({ force: true });
 					}}
 				>
 					Execute
