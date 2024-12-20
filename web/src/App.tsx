@@ -4,7 +4,6 @@ import {
 	useMemo,
 	useState,
 	startTransition,
-	type ChangeEvent,
 } from 'react';
 import { type OpenSSLResult, execute } from './lib/openssl';
 import { Button, Container, Form } from 'react-bootstrap';
@@ -14,8 +13,8 @@ import '@fortawesome/fontawesome-free/css/svg-with-js.css';
 import { useSearchParams } from 'react-router';
 import { parseBase64, toBase64 } from './lib/base64';
 import { SafeTextArea } from './components/SafeTextArea';
-import { addLineBreaks } from './lib/utils';
 import OutputFile from './components/OutputFile';
+import InputFile from './components/InputFile';
 
 const FileTypes = [
 	'cert',
@@ -151,39 +150,11 @@ function App() {
 		}
 	}, [autoExecute, executeCommand]);
 
-	const decodeFile = useCallback(
-		(e: ChangeEvent<HTMLInputElement>) => {
-			const files = e.currentTarget.files;
-			startTransition(async () => {
-				if (!files?.[0]) {
-					setFile(new Uint8Array());
-					return;
-				}
-
-				setFile(new Uint8Array(await files[0].arrayBuffer()));
-			});
-		},
-		[setFile],
-	);
-
 	return (
 		<Container>
 			<h1>OpenSSL-WASI</h1>
 			<p>
-				<SafeTextArea
-					style={{ width: '100%', height: '10rem', fontFamily: 'monospace' }}
-					onChange={e => {
-						setFile(
-							der
-								? parseBase64(e.currentTarget.value)
-								: new TextEncoder().encode(e.currentTarget.value),
-						);
-					}}
-					value={
-						der ? addLineBreaks(toBase64(file)) : new TextDecoder().decode(file)
-					}
-				/>
-				<input type="file" onChange={decodeFile} />
+				<InputFile file={file} setFile={setFile} />
 			</p>
 			<p>
 				<select

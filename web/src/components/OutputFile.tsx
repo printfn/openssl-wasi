@@ -1,19 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { addLineBreaks } from '../lib/utils';
+import { addLineBreaks, isBinary } from '../lib/utils';
 import type { File } from '../lib/openssl';
 import { Button, Tab, Tabs } from 'react-bootstrap';
-
-function isBinary(file: Uint8Array) {
-	for (let i = 0; i < file.length; ++i) {
-		if (file[i] === 10 || file[i] === 13 || file[i] === 9) {
-			continue;
-		}
-		if (file[i] <= 31 || file[i] >= 127) {
-			return true;
-		}
-	}
-	return false;
-}
 
 export default function OutputFile({ file }: { file: File }): ReactNode {
 	const binary = useMemo(() => isBinary(file.contents), [file.contents]);
