@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router';
 import { fromBase64Url, toBase64Url } from '../lib/base64';
 
 export type AppState = {
-	files: { [name: string]: Uint8Array };
+	files: Map<string, Uint8Array>;
 	command: string;
 };
 
@@ -25,7 +25,7 @@ async function encodeState(state: AppState) {
 	const jsonEncoded = JSON.stringify({
 		c: state.command,
 		f: Object.fromEntries(
-			Object.entries(state.files).map(([k, v]) => [k, toBase64Url(v)]),
+			state.files.entries().map(([k, v]) => [k, toBase64Url(v)]),
 		),
 	});
 	return toBase64Url(await compress(new TextEncoder().encode(jsonEncoded)));
@@ -33,7 +33,7 @@ async function encodeState(state: AppState) {
 
 const defaultState: AppState = {
 	command: 'openssl x509 -in input_file -inform PEM -text -noout',
-	files: { input_file: new Uint8Array() },
+	files: new Map([['input_file', new Uint8Array()]]),
 };
 
 async function decodeState(value: string | null): Promise<AppState> {
@@ -46,7 +46,7 @@ async function decodeState(value: string | null): Promise<AppState> {
 	) as JsonState;
 	return {
 		command: jsonState.c,
-		files: Object.fromEntries(
+		files: new Map(
 			Object.entries(jsonState.f).map(([k, v]) => [k, fromBase64Url(v)]),
 		),
 	};

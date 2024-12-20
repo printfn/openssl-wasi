@@ -8,7 +8,7 @@ import { toBase64 } from './base64';
 import { toHex } from './hex';
 import { AsyncLock } from './async-lock';
 
-type InputFiles = { [name: string]: Uint8Array };
+type InputFiles = Map<string, Uint8Array>;
 
 export type File = {
 	name: string;
@@ -66,7 +66,7 @@ async function executeInternal(
 		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 		// @ts-expect-error
 		.write(new Uint8Array([]), 0);
-	for (const [name, contents] of Object.entries(inputFiles)) {
+	for (const [name, contents] of inputFiles) {
 		preopens[0][0]
 			.openAt({}, name, { create: true }, { write: true })
 			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -212,16 +212,15 @@ function compareCache(cmd: string, files: InputFiles) {
 	if (!cache || cache.cmd !== cmd) {
 		return false;
 	}
-	const cacheKeys = Object.keys(cache.files);
-	const argKeys = Object.keys(files);
-	if (cacheKeys.length !== argKeys.length) {
+	if (cache.files.size !== files.size) {
 		return false;
 	}
-	for (const k of argKeys) {
-		if (files[k].length !== cache.files[k].length) {
+	for (const [k, file] of files) {
+		const cacheFile = cache.files.get(k);
+		if (!cacheFile || file.length !== cacheFile.length) {
 			return false;
 		}
-		if (!files[k].every((n, i) => cache?.files[k][i] === n)) {
+		if (!file.every((n, i) => cacheFile[i] === n)) {
 			return false;
 		}
 	}

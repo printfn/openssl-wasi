@@ -16,12 +16,12 @@ type Props = {
 
 export function SafeTextArea({ onChange, style, value }: Props) {
 	const ref = useRef<HTMLTextAreaElement>(null);
-	const edits = useRef<{ [edit: string]: Date | undefined }>({});
+	const edits = useRef<Map<string, Date>>(new Map());
 	useEffect(() => {
 		if (!ref.current || ref.current.value === value) {
 			return;
 		}
-		const edit = edits.current[value];
+		const edit = edits.current.get(value);
 		if (edit && Date.now() - edit.valueOf() < 5000) {
 			return;
 		}
@@ -29,7 +29,7 @@ export function SafeTextArea({ onChange, style, value }: Props) {
 	}, [value]);
 	const myOnChange = useCallback(
 		(event: ChangeEvent<HTMLTextAreaElement>) => {
-			edits.current[event.currentTarget.value] = new Date();
+			edits.current.set(event.currentTarget.value, new Date());
 			onChange(event);
 		},
 		[onChange],

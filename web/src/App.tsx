@@ -127,9 +127,9 @@ function App() {
 		<Container>
 			<h1>OpenSSL-WASI</h1>
 			<InputFile
-				file={files['input_file']}
+				file={files.get('input_file') ?? new Uint8Array()}
 				setFile={value => {
-					setState({ command, files: { ...files, input_file: value } });
+					setState({ command, files: new Map(files).set('input_file', value) });
 				}}
 			/>
 			<div className="mb-2">
