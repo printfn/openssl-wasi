@@ -10,11 +10,10 @@ import { Button, Container, Form } from 'react-bootstrap';
 import './main.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import '@fortawesome/fontawesome-free/css/svg-with-js.css';
-import { useSearchParams } from 'react-router';
-import { parseBase64, toBase64 } from './lib/base64';
 import { SafeTextArea } from './components/SafeTextArea';
 import OutputFile from './components/OutputFile';
 import InputFile from './components/InputFile';
+import { useAppState } from './hooks/useAppState';
 
 const FileTypes = [
 	'cert',
@@ -70,50 +69,10 @@ function getCommand(fileType: FileType, pem: boolean) {
 	}
 }
 
-type AppState = {
-	file: Uint8Array;
-	command: string;
-};
-
-function useAppState() {
-	const [searchParams, setSearchParams] = useSearchParams();
-	const setField = useCallback(
-		(key: keyof AppState, value: string) => {
-			setSearchParams(
-				prev => {
-					prev.set(key, value.toString());
-					return prev;
-				},
-				{ replace: true },
-			);
-		},
-		[setSearchParams],
-	);
-	const file = useMemo(
-		() => parseBase64(searchParams.get('file') ?? ''),
-		[searchParams],
-	);
-	const command = useMemo(
-		() => searchParams.get('command') ?? getCommand('cert', true),
-		[searchParams],
-	);
-	const setFile = useCallback(
-		(file: Uint8Array) => {
-			setField('file', toBase64(file));
-		},
-		[setField],
-	);
-	const setCommand = useCallback(
-		(command: string) => {
-			setField('command', command);
-		},
-		[setField],
-	);
-	return { file, setFile, command, setCommand };
-}
-
 function App() {
-	const { command, file, setCommand, setFile } = useAppState();
+	const { command, file, setCommand, setFile } = useAppState(
+		getCommand('cert', true),
+	);
 
 	const [result, setResult] = useState<OpenSSLResult>({ output: <></> });
 	const [autoExecute, setAutoExecute] = useState(true);
