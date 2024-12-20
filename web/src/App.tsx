@@ -153,10 +153,8 @@ function App() {
 	return (
 		<Container>
 			<h1>OpenSSL-WASI</h1>
-			<p>
-				<InputFile file={file} setFile={setFile} />
-			</p>
-			<p>
+			<InputFile file={file} setFile={setFile} />
+			<div className="mb-2">
 				<select
 					disabled={pem === undefined}
 					value={der ? 'der' : 'pem'}
@@ -203,8 +201,8 @@ function App() {
 						<option value="pkcs12-keys">PKCS #12 Private Key(s)</option>
 					</optgroup>
 				</select>
-			</p>
-			<p>
+			</div>
+			<div className="mb-2">
 				<SafeTextArea
 					style={{ width: '100%', fontFamily: 'monospace' }}
 					value={command}
@@ -212,7 +210,7 @@ function App() {
 						setCommand(e.currentTarget.value);
 					}}
 				/>
-			</p>
+			</div>
 			<div className="mb-3">
 				<Form.Switch
 					id="auto-execute"

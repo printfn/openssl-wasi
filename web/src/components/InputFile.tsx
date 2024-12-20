@@ -36,7 +36,7 @@ export default function InputFile({ file, setFile }: Props) {
 	);
 
 	return (
-		<div>
+		<div className="mb-2">
 			<Tabs
 				activeKey={activeKey}
 				onSelect={e => {
