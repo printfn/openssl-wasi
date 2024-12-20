@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { startTransition, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { fromBase64Url, toBase64Url } from '../lib/base64';
 
@@ -7,53 +7,71 @@ export type AppState = {
 	command: string;
 };
 
-function encodeState(state: AppState) {
-	return toBase64Url(
-		new TextEncoder().encode(
-			JSON.stringify({
-				files: Object.fromEntries(
-					Object.entries(state.files).map(([k, v]) => [k, toBase64Url(v)]),
-				),
-				command: state.command,
-			}),
-		),
-	);
+async function compress(data: Uint8Array) {
+	const ds = new CompressionStream('gzip');
+	const blob = new Blob([data]);
+	const decompressedStream = blob.stream().pipeThrough(ds);
+	return new Uint8Array(await new Response(decompressedStream).arrayBuffer());
 }
 
-function decodeState(value: string | null): AppState {
+async function decompress(data: Uint8Array) {
+	const ds = new DecompressionStream('gzip');
+	const blob = new Blob([data]);
+	const decompressedStream = blob.stream().pipeThrough(ds);
+	return new Uint8Array(await new Response(decompressedStream).arrayBuffer());
+}
+
+async function encodeState(state: AppState) {
+	const jsonEncoded = JSON.stringify({
+		c: state.command,
+		f: Object.fromEntries(
+			Object.entries(state.files).map(([k, v]) => [k, toBase64Url(v)]),
+		),
+	});
+	return toBase64Url(await compress(new TextEncoder().encode(jsonEncoded)));
+}
+
+const defaultState: AppState = {
+	command: 'openssl x509 -in input_file -inform PEM -text -noout',
+	files: { input_file: new Uint8Array() },
+};
+
+async function decodeState(value: string | null): Promise<AppState> {
 	if (!value) {
-		return {
-			command: 'openssl x509 -in input_file -inform PEM -text -noout',
-			files: { input_file: new Uint8Array() },
-		};
+		return defaultState;
 	}
-	type JsonState = { command: string; files: { [name: string]: string } };
+	type JsonState = { c: string; f: { [name: string]: string } };
 	const jsonState = JSON.parse(
-		new TextDecoder().decode(fromBase64Url(value)),
+		new TextDecoder().decode(await decompress(fromBase64Url(value))),
 	) as JsonState;
 	return {
-		command: jsonState.command,
+		command: jsonState.c,
 		files: Object.fromEntries(
-			Object.entries(jsonState.files).map(([k, v]) => [k, fromBase64Url(v)]),
+			Object.entries(jsonState.f).map(([k, v]) => [k, fromBase64Url(v)]),
 		),
 	};
 }
 
 export function useAppState() {
 	const [searchParams, setSearchParams] = useSearchParams();
-	const state = useMemo(
-		() => decodeState(searchParams.get('state')),
-		[searchParams],
-	);
+	const [state, setStateInternal] = useState<AppState>(defaultState);
+	useEffect(() => {
+		startTransition(async () => {
+			setStateInternal(await decodeState(searchParams.get('s')));
+		});
+	}, [searchParams]);
 	const setState = useCallback(
 		(value: AppState) => {
-			setSearchParams(
-				prev => {
-					prev.set('state', encodeState(value));
-					return prev;
-				},
-				{ replace: true },
-			);
+			startTransition(async () => {
+				const encodedState = await encodeState(value);
+				setSearchParams(
+					prev => {
+						prev.set('s', encodedState);
+						return prev;
+					},
+					{ replace: true },
+				);
+			});
 		},
 		[setSearchParams],
 	);

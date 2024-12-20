@@ -50,6 +50,11 @@ async function executeInternal(
 			};
 		}
 	}
+	if (args.length === 0) {
+		return {
+			output: <span style={{ color: 'red' }}>no command specified</span>,
+		};
+	}
 	console.log('Running command', args);
 	const preopens: [Descriptor, string][] = [
 		// eslint-disable-next-line @typescript-eslint/ban-ts-comment

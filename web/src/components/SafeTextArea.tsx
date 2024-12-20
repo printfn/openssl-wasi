@@ -1,4 +1,10 @@
-import { useEffect, useRef, type ChangeEvent, type CSSProperties } from 'react';
+import {
+	useCallback,
+	useEffect,
+	useRef,
+	type ChangeEvent,
+	type CSSProperties,
+} from 'react';
 
 type Props = {
 	style: CSSProperties;
@@ -10,10 +16,23 @@ type Props = {
 
 export function SafeTextArea({ onChange, style, value }: Props) {
 	const ref = useRef<HTMLTextAreaElement>(null);
+	const edits = useRef<{ [edit: string]: Date | undefined }>({});
 	useEffect(() => {
-		if (ref.current && ref.current.value !== value) {
-			ref.current.value = value;
+		if (!ref.current || ref.current.value === value) {
+			return;
 		}
+		const edit = edits.current[value];
+		if (edit && Date.now() - edit.valueOf() < 5000) {
+			return;
+		}
+		ref.current.value = value;
 	}, [value]);
-	return <textarea style={style} ref={ref} onChange={onChange} />;
+	const myOnChange = useCallback(
+		(event: ChangeEvent<HTMLTextAreaElement>) => {
+			edits.current[event.currentTarget.value] = new Date();
+			onChange(event);
+		},
+		[onChange],
+	);
+	return <textarea style={style} ref={ref} onChange={myOnChange} />;
 }
