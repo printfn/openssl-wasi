@@ -4,6 +4,7 @@ import {
 	useMemo,
 	useState,
 	startTransition,
+	type ChangeEvent,
 } from 'react';
 import { type OpenSSLResult, execute } from './lib/openssl';
 import { Button, Container, Form } from 'react-bootstrap';
@@ -89,22 +90,17 @@ function useAppState() {
 		},
 		[setSearchParams],
 	);
-	const [file, setFileState] = useState<Uint8Array>(new Uint8Array());
-	useEffect(() => {
-		startTransition(async () => {
-			setFileState(await parseBase64(searchParams.get('file') ?? ''));
-		});
-	}, [searchParams]);
+	const file = useMemo(
+		() => parseBase64(searchParams.get('file') ?? ''),
+		[searchParams],
+	);
 	const command = useMemo(
 		() => searchParams.get('command') ?? getCommand('cert', true),
 		[searchParams],
 	);
 	const setFile = useCallback(
-		async (file: Uint8Array | (() => Promise<Uint8Array>)) => {
-			if (typeof file === 'function') {
-				file = await file();
-			}
-			setField('file', await toBase64(file));
+		(file: Uint8Array) => {
+			setField('file', toBase64(file));
 		},
 		[setField],
 	);
@@ -156,25 +152,19 @@ function App() {
 	}, [autoExecute, executeCommand]);
 
 	const decodeFile = useCallback(
-		(files: FileList | null) => {
+		(e: ChangeEvent<HTMLInputElement>) => {
+			const files = e.currentTarget.files;
 			startTransition(async () => {
 				if (!files?.[0]) {
-					await setFile(new Uint8Array());
+					setFile(new Uint8Array());
 					return;
 				}
 
-				await setFile(new Uint8Array(await files[0].arrayBuffer()));
+				setFile(new Uint8Array(await files[0].arrayBuffer()));
 			});
 		},
 		[setFile],
 	);
-
-	const [base64File, setBase64File] = useState('');
-	useEffect(() => {
-		startTransition(async () => {
-			setBase64File(await toBase64(file));
-		});
-	}, [file]);
 
 	return (
 		<Container>
@@ -183,24 +173,17 @@ function App() {
 				<SafeTextArea
 					style={{ width: '100%', height: '10rem', fontFamily: 'monospace' }}
 					onChange={e => {
-						startTransition(async () =>
-							setFile(async () =>
-								der
-									? await parseBase64(e.currentTarget.value)
-									: new TextEncoder().encode(e.currentTarget.value),
-							),
+						setFile(
+							der
+								? parseBase64(e.currentTarget.value)
+								: new TextEncoder().encode(e.currentTarget.value),
 						);
 					}}
 					value={
-						der ? addLineBreaks(base64File) : new TextDecoder().decode(file)
+						der ? addLineBreaks(toBase64(file)) : new TextDecoder().decode(file)
 					}
 				/>
-				<input
-					type="file"
-					onChange={e => {
-						decodeFile(e.currentTarget.files);
-					}}
-				/>
+				<input type="file" onChange={decodeFile} />
 			</p>
 			<p>
 				<select

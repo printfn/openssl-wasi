@@ -163,7 +163,7 @@ async function executeInternal(
 		files.push({
 			name: file.name,
 			contents,
-			base64: await toBase64(contents),
+			base64: toBase64(contents),
 			hex: toHex(contents),
 		});
 	}
