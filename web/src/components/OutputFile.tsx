@@ -15,7 +15,7 @@ function isBinary(file: Uint8Array) {
 	return false;
 }
 
-export default function DisplayFile({ file }: { file: File }): ReactNode {
+export default function OutputFile({ file }: { file: File }): ReactNode {
 	const binary = useMemo(() => isBinary(file.contents), [file.contents]);
 	const [activeKey, setActiveKey] = useState('utf8');
 	useEffect(() => {

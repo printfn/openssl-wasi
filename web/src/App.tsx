@@ -15,7 +15,7 @@ import { useSearchParams } from 'react-router';
 import { parseBase64, toBase64 } from './lib/base64';
 import { SafeTextArea } from './components/SafeTextArea';
 import { addLineBreaks } from './lib/utils';
-import DisplayFile from './components/DisplayFile';
+import OutputFile from './components/OutputFile';
 
 const FileTypes = [
 	'cert',
@@ -267,7 +267,7 @@ function App() {
 					<h4>Output File{result.files.length === 1 ? '' : 's'}:</h4>
 					{result.files.map(file => (
 						<div key={file.name}>
-							<DisplayFile file={file} />
+							<OutputFile file={file} />
 						</div>
 					))}
 				</div>
