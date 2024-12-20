@@ -6,6 +6,7 @@ import type { Descriptor } from '@bytecodealliance/preview2-shim/interfaces/wasi
 import type { Result } from '@bytecodealliance/preview2-shim/interfaces/wasi-cli-exit';
 import { toBase64 } from './base64';
 import { toHex } from './hex';
+import { AsyncLock } from './async-lock';
 
 export type File = {
 	name: string;
@@ -29,7 +30,7 @@ class ExitError extends Error {
 	}
 }
 
-export async function execute(
+async function executeInternal(
 	cmd: string,
 	file: Uint8Array,
 ): Promise<OpenSSLResult> {
@@ -192,4 +193,30 @@ export async function execute(
 	);
 
 	return { output, files };
+}
+
+const lock = new AsyncLock();
+let cache: { cmd: string; file: Uint8Array; result: OpenSSLResult } | undefined;
+
+export async function execute(
+	cmd: string,
+	file: Uint8Array,
+): Promise<OpenSSLResult> {
+	const release = await lock.acquire();
+	try {
+		if (
+			cache?.cmd === cmd &&
+			cache.file.length === file.length &&
+			cache.file.every((n, i) => file[i] === n)
+		) {
+			console.log('using cache');
+			return cache.result;
+		}
+		console.log('recalculating, cache:', cache, cmd);
+		const result = await executeInternal(cmd, file);
+		cache = { cmd, file, result };
+		return result;
+	} finally {
+		release();
+	}
 }
