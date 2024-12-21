@@ -10,24 +10,27 @@ export type AppState = {
 };
 
 async function compress(data: Uint8Array) {
-	const ds = new CompressionStream('gzip');
+	const ds = new CompressionStream('deflate-raw');
 	const blob = new Blob([data]);
 	const compressedStream = blob.stream().pipeThrough(ds);
 	return new Uint8Array(await new Response(compressedStream).arrayBuffer());
 }
 
 async function decompress(data: Uint8Array) {
-	const ds = new DecompressionStream('gzip');
+	const ds = new DecompressionStream('deflate-raw');
 	const blob = new Blob([data]);
 	const decompressedStream = blob.stream().pipeThrough(ds);
 	return new Uint8Array(await new Response(decompressedStream).arrayBuffer());
 }
 
 async function encodeState(state: AppState) {
-	const cborEncoded = cborEncode({
-		c: state.command,
-		f: Object.fromEntries(state.files.entries()),
-	});
+	const cborEncoded = cborEncode(
+		{
+			c: state.command,
+			f: Object.fromEntries(state.files.entries()),
+		},
+		{ dcbor: true },
+	);
 	return toBase64Url(await compress(cborEncoded));
 }
 
@@ -44,6 +47,7 @@ async function decodeState(value: string | null): Promise<AppState> {
 		type CborState = { c: string; f: { [name: string]: Uint8Array } };
 		const cborState = cborDecode<CborState>(
 			await decompress(fromBase64Url(value)),
+			{ dcbor: true },
 		);
 		return {
 			command: cborState.c,
