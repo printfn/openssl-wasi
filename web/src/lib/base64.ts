@@ -1,13 +1,11 @@
 export function toBase64(bytes: Uint8Array | null | undefined) {
-	if (bytes === null || bytes === undefined) {
+	if (bytes == null) {
 		return '';
 	}
 	if (bytes.toBase64) {
 		return bytes.toBase64();
 	}
-	return btoa(
-		bytes.reduce((acc, current) => acc + String.fromCharCode(current), ''),
-	);
+	return btoa(String.fromCharCode.apply(null, [...bytes]));
 }
 
 export function toBase64Url(bytes: Uint8Array | null | undefined) {
