@@ -12,8 +12,8 @@ export type AppState = {
 async function compress(data: Uint8Array) {
 	const ds = new CompressionStream('gzip');
 	const blob = new Blob([data]);
-	const decompressedStream = blob.stream().pipeThrough(ds);
-	return new Uint8Array(await new Response(decompressedStream).arrayBuffer());
+	const compressedStream = blob.stream().pipeThrough(ds);
+	return new Uint8Array(await new Response(compressedStream).arrayBuffer());
 }
 
 async function decompress(data: Uint8Array) {
@@ -69,8 +69,9 @@ export function useAppState() {
 				const encodedState = await encodeState(value);
 				setSearchParams(
 					prev => {
-						prev.set('s', encodedState);
-						return prev;
+						const params = new URLSearchParams(prev);
+						params.set('s', encodedState);
+						return params;
 					},
 					{ replace: true },
 				);
