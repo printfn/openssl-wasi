@@ -1,16 +1,31 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { addLineBreaks, isBinary } from '../lib/utils';
 import type { File } from '../lib/openssl';
 import { Button, Tab, Tabs } from 'react-bootstrap';
 
+const tabKeys = ['utf8', 'base64', 'hex'] as const;
+type TabKey = (typeof tabKeys)[number];
+
+function useTabKey(binary: boolean): [TabKey, (key: string | null) => void] {
+	const [activeKeyInternal, setActiveKeyInternal] = useState<TabKey>('utf8');
+	const activeKey = useMemo(
+		() =>
+			activeKeyInternal === 'utf8' && binary ? 'base64' : activeKeyInternal,
+		[binary, activeKeyInternal],
+	);
+	const setActiveKey = useCallback((k: string | null) => {
+		if (k && tabKeys.includes(k as TabKey)) {
+			setActiveKeyInternal(k as TabKey);
+		} else {
+			setActiveKeyInternal('utf8');
+		}
+	}, []);
+	return [activeKey, setActiveKey];
+}
+
 export default function OutputFile({ file }: { file: File }): ReactNode {
 	const binary = useMemo(() => isBinary(file.contents), [file.contents]);
-	const [activeKey, setActiveKey] = useState('utf8');
-	useEffect(() => {
-		if (activeKey === 'utf8' && binary) {
-			setActiveKey('base64');
-		}
-	}, [activeKey, binary]);
+	const [activeKey, setActiveKey] = useTabKey(binary);
 
 	const fileLength = `${file.contents.length.toLocaleString()} bytes`;
 
@@ -19,7 +34,7 @@ export default function OutputFile({ file }: { file: File }): ReactNode {
 			<Tabs
 				activeKey={activeKey}
 				onSelect={e => {
-					setActiveKey(e ?? 'utf8');
+					setActiveKey((e as TabKey | null) ?? 'utf8');
 				}}
 			>
 				<Tab eventKey="utf8" title="UTF-8" disabled={binary}>

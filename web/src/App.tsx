@@ -97,21 +97,13 @@ function App() {
 		return undefined;
 	}, [command]);
 
-	const executeCommand = useCallback(
-		({ force }: { force: boolean }) => {
-			startTransition(async () => {
-				const result = await execute(command, files, { force });
-				setResult(result);
-			});
-		},
-		[files, command],
-	);
-
 	useEffect(() => {
 		if (autoExecute) {
-			executeCommand({ force: false });
+			startTransition(async () => {
+				setResult(await execute(command, files, { force: false }));
+			});
 		}
-	}, [autoExecute, executeCommand]);
+	}, [autoExecute, command, files]);
 
 	const setCommand = useCallback(
 		(value: string) => {
@@ -202,7 +194,9 @@ function App() {
 					variant="primary"
 					disabled={autoExecute}
 					onClick={() => {
-						executeCommand({ force: true });
+						startTransition(async () => {
+							setResult(await execute(command, files, { force: true }));
+						});
 					}}
 				>
 					Execute
