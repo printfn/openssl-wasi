@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { parse } from 'shell-quote';
 import type { ReactElement } from 'react';
 import { instantiate } from '../assets/openssl-wasi/openssl';
@@ -93,6 +95,8 @@ async function executeInternal(
 		blockingFlush() {},
 		[Symbol.dispose]() {},
 	});
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const wasi: any = wasip2;
 	// eslint-disable-next-line @typescript-eslint/await-thenable
 	const { run } = await instantiate(
 		async url => {
@@ -115,28 +119,28 @@ async function executeInternal(
 			'wasi:cli/stderr': {
 				getStderr: () => errStream,
 			},
-			'wasi:cli/stdin': wasip2.cli.stdin,
+			'wasi:cli/stdin': wasi.cli.stdin,
 			'wasi:cli/stdout': {
 				getStdout: () => outStream,
 			},
-			'wasi:cli/terminal-input': wasip2.cli.terminalInput,
-			'wasi:cli/terminal-output': wasip2.cli.terminalOutput,
-			'wasi:cli/terminal-stderr': wasip2.cli.terminalStderr,
-			'wasi:cli/terminal-stdin': wasip2.cli.terminalStdin,
-			'wasi:cli/terminal-stdout': wasip2.cli.terminalStdout,
-			'wasi:clocks/monotonic-clock': wasip2.clocks.monotonicClock,
-			'wasi:clocks/wall-clock': wasip2.clocks.wallClock,
+			'wasi:cli/terminal-input': wasi.cli.terminalInput,
+			'wasi:cli/terminal-output': wasi.cli.terminalOutput,
+			'wasi:cli/terminal-stderr': wasi.cli.terminalStderr,
+			'wasi:cli/terminal-stdin': wasi.cli.terminalStdin,
+			'wasi:cli/terminal-stdout': wasi.cli.terminalStdout,
+			'wasi:clocks/monotonic-clock': wasi.clocks.monotonicClock,
+			'wasi:clocks/wall-clock': wasi.clocks.wallClock,
 			'wasi:filesystem/preopens': {
 				getDirectories: () => preopens,
 			},
-			'wasi:filesystem/types': wasip2.filesystem.types,
-			'wasi:io/error': wasip2.io.error,
-			'wasi:io/poll': wasip2.io.poll,
-			'wasi:io/streams': wasip2.io.streams,
-			'wasi:random/random': wasip2.random.random,
-			'wasi:sockets/network': wasip2.sockets.network,
-			'wasi:sockets/tcp': wasip2.sockets.tcp,
-			'wasi:sockets/udp': wasip2.sockets.udp,
+			'wasi:filesystem/types': wasi.filesystem.types,
+			'wasi:io/error': wasi.io.error,
+			'wasi:io/poll': wasi.io.poll,
+			'wasi:io/streams': wasi.io.streams,
+			'wasi:random/random': wasi.random.random,
+			'wasi:sockets/network': wasi.sockets.network,
+			'wasi:sockets/tcp': wasi.sockets.tcp,
+			'wasi:sockets/udp': wasi.sockets.udp,
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		} as any,
 	);
