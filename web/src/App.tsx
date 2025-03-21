@@ -26,6 +26,7 @@ const FileTypes = [
 	'create-cert',
 	'create-rsa',
 	'create-ecc',
+	'create-mldsa',
 	'create-digest',
 	'pkcs7-certs-crls',
 	'pkcs12-certs',
@@ -53,9 +54,11 @@ function getCommand(fileType: FileType, pem: boolean) {
 		case 'create-cert':
 			return `openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:secp384r1 -keyout private.key -out certificate.crt -verbose -sha256 -days 7 -noenc -subj "/CN=example.com" -text -addext "subjectAltName=DNS:example.com"`;
 		case 'create-rsa':
-			return `openssl genrsa -out private.key 2048`;
+			return `openssl genpkey -algorithm rsa -pkeyopt bits:2048 -out private.key`;
 		case 'create-ecc':
-			return `openssl ecparam -name secp384r1 -text -out private.key -genkey`;
+			return `openssl genpkey -algorithm ec -pkeyopt group:secp384r1 -out private.key`;
+		case 'create-mldsa':
+			return `openssl genpkey -algorithm mldsa65 -provparam ml-dsa.output_formats=seed-only -out private.key`;
 		case 'create-digest':
 			return `openssl dgst -sha256 -out signature.bin input_file`;
 		case 'pkcs7-certs-crls':
@@ -157,6 +160,7 @@ function App() {
 						<option value="asn1">ASN.1</option>
 					</optgroup>
 					<optgroup label="Create">
+						<option value="create-mldsa">ML-DSA Private Key</option>
 						<option value="create-ecc">ECC Private Key</option>
 						<option value="create-rsa">RSA Private Key</option>
 						<option value="create-csr">Certificate Signing Request</option>

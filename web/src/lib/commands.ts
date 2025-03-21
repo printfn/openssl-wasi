@@ -74,7 +74,7 @@ export const commands: Selection['selection'] = [
 	{
 		name: 'create-ecc',
 		resolve: () =>
-			`openssl ecparam -name secp384r1 -text -out private.key -genkey`,
+			`openssl ecparam -name secp384r1 -text -out _private.key -genkey;\nopenssl pkcs8 -topk8 -nocrypt -outform PEM -in _private.key -out private.key`,
 	},
 	{
 		name: 'create-digest',

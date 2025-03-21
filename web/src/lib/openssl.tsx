@@ -35,29 +35,10 @@ class ExitError extends Error {
 	}
 }
 
-async function executeInternal(
-	cmd: string,
+async function executeOpenSSL(
+	args: string[],
 	inputFiles: InputFiles,
 ): Promise<OpenSSLResult> {
-	const parsed = parse(cmd);
-	const args: string[] = [];
-	for (let i = 0; i < parsed.length; ++i) {
-		const arg = parsed[i];
-		if (typeof arg === 'string') {
-			args.push(arg);
-		} else {
-			return {
-				output: (
-					<span style={{ color: 'red' }}>failed to parse command `{cmd}`</span>
-				),
-			};
-		}
-	}
-	if (args.length === 0) {
-		return {
-			output: <span style={{ color: 'red' }}>no command specified</span>,
-		};
-	}
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const wasi: any = wasip2;
 	console.log('Running command', args);
@@ -227,6 +208,45 @@ function compareCache(cmd: string, files: InputFiles) {
 		}
 	}
 	return true;
+}
+
+async function executeInternal(
+	cmd: string,
+	inputFiles: InputFiles,
+): Promise<OpenSSLResult> {
+	const parsed = parse(cmd);
+	const commands: string[][] = [[]];
+	for (let i = 0; i < parsed.length; ++i) {
+		const arg = parsed[i];
+		if (typeof arg === 'string') {
+			commands[commands.length - 1].push(arg);
+		} else if ('op' in arg && arg.op === ';') {
+			commands.push([]);
+		} else {
+			return {
+				output: (
+					<span style={{ color: 'red' }}>failed to parse command `{cmd}`</span>
+				),
+			};
+		}
+	}
+	if (commands[0].length === 0) {
+		return {
+			output: <span style={{ color: 'red' }}>no command specified</span>,
+		};
+	}
+	for (let i = 0; i < commands.length; ++i) {
+		const command = commands[i];
+		const result = await executeOpenSSL(command, inputFiles);
+		if (!result.files || i === commands.length - 1) {
+			if (result.files) {
+				result.files = result.files.filter(f => !f.name.startsWith('_'));
+			}
+			return result;
+		}
+		inputFiles = new Map(result.files.map(f => [f.name, f.contents]));
+	}
+	throw new Error('unreachable');
 }
 
 export async function execute(
