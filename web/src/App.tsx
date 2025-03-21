@@ -24,10 +24,11 @@ const FileTypes = [
 	'asn1',
 	'create-csr',
 	'create-cert',
-	'create-rsa',
-	'create-ecc',
+	'create-mlkem',
 	'create-mldsa',
 	'create-slhdsa',
+	'create-rsa',
+	'create-ecc',
 	'create-digest',
 	'pkcs7-certs-crls',
 	'pkcs12-certs',
@@ -54,14 +55,16 @@ function getCommand(fileType: FileType, pem: boolean) {
 			return `openssl req -new -newkey ec -pkeyopt ec_paramgen_curve:secp384r1 -keyout private.key -out csr.req -noenc -verify -verbose -subj "/CN=example.com" -outform PEM -text -addext "subjectAltName=DNS:example.com"`;
 		case 'create-cert':
 			return `openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:secp384r1 -keyout private.key -out certificate.crt -verbose -sha256 -days 7 -noenc -subj "/CN=example.com" -text -addext "subjectAltName=DNS:example.com"`;
+		case 'create-mlkem':
+			return `openssl genpkey -algorithm mlkem768 -provparam ml-kem.output_formats=seed-only -out private.key -outpubkey public.key`;
+		case 'create-mldsa':
+			return `openssl genpkey -algorithm mldsa65 -provparam ml-dsa.output_formats=seed-only -out private.key -outpubkey public.key`;
+		case 'create-slhdsa':
+			return `openssl genpkey -algorithm slh-dsa-sha2-192s -out private.key -outpubkey public.key`;
 		case 'create-rsa':
 			return `openssl genpkey -algorithm rsa -pkeyopt bits:2048 -out private.key -outpubkey public.key`;
 		case 'create-ecc':
 			return `openssl genpkey -algorithm ec -pkeyopt group:secp384r1 -out private.key -outpubkey public.key`;
-		case 'create-mldsa':
-			return `openssl genpkey -algorithm mldsa65 -provparam ml-dsa.output_formats=seed-only -out private.key -outpubkey public.key`;
-		case 'create-slhdsa':
-			return `openssl genpkey -algorithm SLH-DSA-SHA2-192s -out private.key -outpubkey public.key`;
 		case 'create-digest':
 			return `openssl dgst -sha256 -out signature.bin input_file`;
 		case 'pkcs7-certs-crls':
@@ -163,6 +166,7 @@ function App() {
 						<option value="asn1">ASN.1</option>
 					</optgroup>
 					<optgroup label="Create">
+						<option value="create-mlkem">ML-KEM Private Key</option>
 						<option value="create-mldsa">ML-DSA Private Key</option>
 						<option value="create-slhdsa">SLH-DSA Private Key</option>
 						<option value="create-ecc">ECC Private Key</option>
