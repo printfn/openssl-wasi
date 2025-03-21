@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { parse } from 'shell-quote';
@@ -57,11 +58,12 @@ async function executeInternal(
 			output: <span style={{ color: 'red' }}>no command specified</span>,
 		};
 	}
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const wasi: any = wasip2;
 	console.log('Running command', args);
 	const preopens: [Descriptor, string][] = [
-		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-		// @ts-expect-error
-		[new wasip2.filesystem.types.Descriptor({ dir: {} }), '/'],
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-call
+		[new wasi.filesystem.types.Descriptor({ dir: {} }), '/'],
 	];
 	preopens[0][0]
 		.openAt({}, 'openssl.cnf', { create: true }, { write: true })
@@ -77,26 +79,22 @@ async function executeInternal(
 	}
 	let stdout = '';
 	let stderr = '';
-	// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-	// @ts-expect-error
-	const outStream = new wasip2.io.streams.OutputStream({
+	// eslint-disable-next-line @typescript-eslint/no-unsafe-call
+	const outStream = new wasi.io.streams.OutputStream({
 		write(contents: Uint8Array) {
 			stdout += textDecoder.decode(contents);
 		},
 		blockingFlush() {},
 		[Symbol.dispose]() {},
 	});
-	// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-	// @ts-expect-error
-	const errStream = new wasip2.io.streams.OutputStream({
+	// eslint-disable-next-line @typescript-eslint/no-unsafe-call
+	const errStream = new wasi.io.streams.OutputStream({
 		write(contents: Uint8Array) {
 			stderr += textDecoder.decode(contents);
 		},
 		blockingFlush() {},
 		[Symbol.dispose]() {},
 	});
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const wasi: any = wasip2;
 	// eslint-disable-next-line @typescript-eslint/await-thenable
 	const { run } = await instantiate(
 		async url => {
