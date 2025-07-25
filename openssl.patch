@@ -24,7 +24,7 @@ diff --git a/apps/speed.c b/apps/speed.c
 index b978323f56..13ab33420e 100644
 --- a/apps/speed.c
 +++ b/apps/speed.c
-@@ -27,6 +27,11 @@
+@@ -27,6 +27,23 @@
  /* We need to use some deprecated APIs */
  #define OPENSSL_SUPPRESS_DEPRECATED
 
@@ -33,6 +33,18 @@ index b978323f56..13ab33420e 100644
 +    return 0;
 +}
 +
++#include <errno.h>
++int madvise(void *addr, size_t len, int advice)
++{
++    errno = -ENOTSUP;
++    return -1;
++}
++
++int mlock(const void *addr, size_t len)
++{
++    errno = -ENOTSUP;
++    return -1;
++}
  #include <stdio.h>
  #include <stdlib.h>
  #include <string.h>
